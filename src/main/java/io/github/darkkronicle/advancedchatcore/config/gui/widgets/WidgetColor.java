@@ -31,8 +31,7 @@ public class WidgetColor extends GuiTextFieldGeneric {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
-        super.render(context, mouseX, mouseY, partialTicks);
+    public void renderWidget(DrawContext context, int mouseX, int mouseY, float partialTicks) {
         int y = this.y;
         RenderUtils.drawRect(this.colorX, y, 19, 19, 0xFFFFFFFF);
         RenderUtils.drawRect(this.colorX + 1, y + 1, 17, 17, 0xFF000000);
