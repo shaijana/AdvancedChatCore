@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.hud.ChatHudLine;
 import net.minecraft.client.gui.hud.MessageIndicator;
 import net.minecraft.network.message.MessageSignatureData;
 import net.minecraft.text.Style;
@@ -30,8 +31,8 @@ public class ChatHistoryProcessor implements IMessageProcessor {
 
     private static boolean sendToHud(Text text, @Nullable MessageSignatureData signature, MessageIndicator indicator) {
         if (AdvancedChatCore.FORWARD_TO_HUD) {
-            ((MixinChatHudInvoker) MinecraftClient.getInstance().inGameHud.getChatHud()).invokeAddMessage(
-                    text, signature, MinecraftClient.getInstance().inGameHud.getTicks(), indicator, false);
+            ChatHudLine chatHudLine = new ChatHudLine(MinecraftClient.getInstance().inGameHud.getTicks(), text, signature, indicator);
+            ((MixinChatHudInvoker) MinecraftClient.getInstance().inGameHud.getChatHud()).invokeAddVisibleMessage(chatHudLine);
             return true;
         }
         return false;

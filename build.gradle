@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.4-SNAPSHOT'
+	id 'fabric-loom' version '1.6-SNAPSHOT'
 	id 'maven-publish'
 	id "io.freefair.lombok" version "8.4"
 }
@@ -21,6 +21,7 @@ repositories {
 	maven { url 'https://maven.terraformersmc.com/releases/' }
 	maven { url 'https://jitpack.io' }
 	maven { url 'https://maven.wispforest.io' }
+	maven { url 'https://repo.fabim.de/repository/maven-public/' }//Shaijana
 }
 
 dependencies {
@@ -64,7 +65,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
-	it.options.release = 17
+	it.options.release = 21
 }
 
 tasks.register('sourcesJar', Jar) {
@@ -74,8 +75,8 @@ tasks.register('sourcesJar', Jar) {
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
