@@ -16,6 +16,7 @@ import io.github.darkkronicle.advancedchatcore.util.StyleFormatter;
 import io.github.darkkronicle.advancedchatcore.util.TextBuilder;
 import io.github.darkkronicle.advancedchatcore.util.TextUtil;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
@@ -246,7 +247,7 @@ public class AdvancedTextField extends TextFieldWidget {
 		}
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder bufferBuilder = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
-		RenderSystem.setShader(GameRenderer::getPositionProgram);
+		RenderSystem.setShader(ShaderProgramKeys.POSITION);
 		RenderSystem.setShaderColor(0.0f, 0.0f, 1.0f, 1.0f);
 //        RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
