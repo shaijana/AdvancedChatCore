@@ -385,7 +385,7 @@ public class AdvancedChatScreen extends GuiBase {
         this.setFocused(this.chatField);
         this.chatField.setFocused(true);
         this.chatField.render(context, mouseX, mouseY, partialTicks);
-        super.render(context, mouseX, mouseY, partialTicks);
+        renderWithoutBackground(context, mouseX, mouseY, partialTicks);
         for (AdvancedChatScreenSection section : sections) {
             section.render(context, mouseX, mouseY, partialTicks);
         }
@@ -394,6 +394,27 @@ public class AdvancedChatScreen extends GuiBase {
             context.drawHoverEvent(textRenderer, style, mouseX, mouseY);
             //this.renderTextHoverEffect(context, style, mouseX, mouseY);
         }
+    }
+
+    //Copied from GuiBase, but removed background rendering.
+    private void renderWithoutBackground(DrawContext drawContext, int mouseX, int mouseY, float partialTicks) {
+        if (this.drawContext == null || this.drawContext.equals(drawContext) == false)
+        {
+            this.drawContext = drawContext;
+        }
+
+        this.drawTitle(drawContext, mouseX, mouseY, partialTicks);
+
+        // Draw base widgets
+        this.drawWidgets(mouseX, mouseY, drawContext);
+        this.drawTextFields(mouseX, mouseY, drawContext);
+        this.drawButtons(mouseX, mouseY, partialTicks, drawContext);
+
+        this.drawContents(drawContext, mouseX, mouseY, partialTicks);
+
+        this.drawButtonHoverTexts(mouseX, mouseY, partialTicks, drawContext);
+        this.drawHoveredWidget(mouseX, mouseY, drawContext);
+        this.drawGuiMessages(drawContext);
     }
 
     @Override
