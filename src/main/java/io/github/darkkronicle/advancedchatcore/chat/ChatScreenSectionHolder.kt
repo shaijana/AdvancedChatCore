@@ -5,35 +5,30 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.chat;
+package io.github.darkkronicle.advancedchatcore.chat
 
-import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import lombok.Getter;
+import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection
+import lombok.Getter
+import java.util.function.Function
 
 /**
- * A class to handle the construction and distribution of {@link AdvancedChatScreenSection} when
- * {@link AdvancedChatScreen} is created.
+ * A class to handle the construction and distribution of [AdvancedChatScreenSection] when
+ * [AdvancedChatScreen] is created.
  */
-public class ChatScreenSectionHolder {
+class ChatScreenSectionHolder private constructor() {
 
-    private static final ChatScreenSectionHolder INSTANCE = new ChatScreenSectionHolder();
+	/** All suppliers for the sections  */
+	@Getter
+	private val sectionSuppliers: MutableList<Function<AdvancedChatScreen, AdvancedChatScreenSection?>> = ArrayList()
 
-    /** All suppliers for the sections */
-    @Getter
-    private final List<Function<AdvancedChatScreen, AdvancedChatScreenSection>> sectionSuppliers =
-            new ArrayList<>();
+	fun addSectionSupplier(
+		sectionSupplier: Function<AdvancedChatScreen, AdvancedChatScreenSection?>
+	) {
+		sectionSuppliers.add(sectionSupplier)
+	}
 
-    public static ChatScreenSectionHolder getInstance() {
-        return INSTANCE;
-    }
+	companion object {
 
-    private ChatScreenSectionHolder() {}
-
-    public void addSectionSupplier(
-            Function<AdvancedChatScreen, AdvancedChatScreenSection> sectionSupplier) {
-        sectionSuppliers.add(sectionSupplier);
-    }
+		val instance: ChatScreenSectionHolder = ChatScreenSectionHolder()
+	}
 }

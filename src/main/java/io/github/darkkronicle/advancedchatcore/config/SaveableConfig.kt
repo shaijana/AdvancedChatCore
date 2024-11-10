@@ -5,21 +5,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.config;
+package io.github.darkkronicle.advancedchatcore.config
 
-import fi.dy.masa.malilib.config.IConfigBase;
+import fi.dy.masa.malilib.config.IConfigBase
 
-public class SaveableConfig<T extends IConfigBase> {
+class SaveableConfig<T : IConfigBase?> private constructor(val key: String, val config: T) {
+	companion object {
 
-    public final T config;
-    public final String key;
-
-    private SaveableConfig(String key, T config) {
-        this.key = key;
-        this.config = config;
-    }
-
-    public static <C extends IConfigBase> SaveableConfig<C> fromConfig(String key, C config) {
-        return new SaveableConfig<>(key, config);
-    }
+		fun <C : IConfigBase?> fromConfig(key: String, config: C): SaveableConfig<C> {
+			return SaveableConfig(key, config)
+		}
+	}
 }

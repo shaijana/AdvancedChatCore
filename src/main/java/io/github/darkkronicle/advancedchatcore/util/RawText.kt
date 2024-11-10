@@ -1,48 +1,49 @@
-package io.github.darkkronicle.advancedchatcore.util;
+package io.github.darkkronicle.advancedchatcore.util
 
-import net.minecraft.text.*;
-import net.minecraft.util.Language;
+import net.minecraft.text.OrderedText
+import net.minecraft.text.PlainTextContent
+import net.minecraft.text.Style
+import net.minecraft.text.Text
+import net.minecraft.text.TextContent
+import net.minecraft.util.Language
+import java.util.*
 
-import java.util.ArrayList;
-import java.util.List;
+@kotlin.jvm.JvmRecord
+data class RawText(val content: String, val style: Style) : Text {
 
-public record RawText(String content, Style style) implements Text {
+	override fun getStyle(): Style {
+		return style
+	}
 
-    @Override
-    public Style getStyle() {
-        return style;
-    }
+	override fun getContent(): TextContent {
+		return PlainTextContent.Literal(content)
+	}
 
-    @Override
-    public TextContent getContent() {
-        return new PlainTextContent.Literal(content);
-    }
+	override fun getString(): String {
+		return content
+	}
 
-    @Override
-    public String getString() {
-        return content;
-    }
+	override fun getSiblings(): List<Text> {
+		return ArrayList()
+	}
 
-    @Override
-    public List<Text> getSiblings() {
-        return new ArrayList<>();
-    }
+	override fun asOrderedText(): OrderedText {
+		val language = Language.getInstance()
+		return language.reorder(this)
+	}
 
-    @Override
-    public OrderedText asOrderedText() {
-        Language language = Language.getInstance();
-        return language.reorder(this);
-    }
+	fun withString(string: String): RawText {
+		return of(string, style)
+	}
 
-    public RawText withString(String string) {
-        return RawText.of(string, style);
-    }
+	companion object {
 
-    public static RawText of(String string) {
-        return RawText.of(string, Style.EMPTY);
-    }
+		fun of(string: String): RawText {
+			return of(string, Style.EMPTY)
+		}
 
-    public static RawText of(String string, Style style) {
-        return new RawText(string, style);
-    }
+		fun of(string: String, style: Style): RawText {
+			return RawText(string, style)
+		}
+	}
 }

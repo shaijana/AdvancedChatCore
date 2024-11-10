@@ -5,46 +5,34 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.gui;
+package io.github.darkkronicle.advancedchatcore.gui
 
-import fi.dy.masa.malilib.gui.GuiListBase;
-import fi.dy.masa.malilib.gui.button.ButtonBase;
-import fi.dy.masa.malilib.gui.interfaces.ISelectionListener;
-import fi.dy.masa.malilib.gui.widgets.WidgetListBase;
-import fi.dy.masa.malilib.gui.widgets.WidgetListEntryBase;
-import io.github.darkkronicle.advancedchatcore.interfaces.IClosable;
+import fi.dy.masa.malilib.gui.GuiListBase
+import fi.dy.masa.malilib.gui.button.ButtonBase
+import fi.dy.masa.malilib.gui.interfaces.ISelectionListener
+import fi.dy.masa.malilib.gui.widgets.WidgetListBase
+import fi.dy.masa.malilib.gui.widgets.WidgetListEntryBase
+import io.github.darkkronicle.advancedchatcore.interfaces.IClosable
 
-public abstract class CoreGuiListBase<
-                TYPE,
-                WIDGET extends WidgetListEntryBase<TYPE>,
-                WIDGETLIST extends WidgetListBase<TYPE, WIDGET>>
-        extends GuiListBase<TYPE, WIDGET, WIDGETLIST>
-        implements ISelectionListener<TYPE>, IClosable {
+abstract class CoreGuiListBase<TYPE, WIDGET : WidgetListEntryBase<TYPE>?, WIDGETLIST : WidgetListBase<TYPE, WIDGET>?>
+	(listX: Int, listY: Int) : GuiListBase<TYPE, WIDGET, WIDGETLIST?>(listX, listY),
+	ISelectionListener<TYPE>, IClosable {
 
-    public CoreGuiListBase(int listX, int listY) {
-        super(listX, listY);
-    }
+	override fun createListWidget(listX: Int, listY: Int): WIDGETLIST? {
+		return null
+	}
 
-    @Override
-    protected WIDGETLIST createListWidget(int listX, int listY) {
-        return null;
-    }
+	override fun getBrowserWidth(): Int {
+		return this.width - 20
+	}
 
-    @Override
-    protected int getBrowserWidth() {
-        return this.width - 20;
-    }
+	override fun getBrowserHeight(): Int {
+		return this.height - 6 - this.listY
+	}
 
-    @Override
-    protected int getBrowserHeight() {
-        return this.height - 6 - this.getListY();
-    }
+	override fun onSelectionChange(entry: TYPE) {}
 
-    @Override
-    public void onSelectionChange(TYPE entry) {}
-
-    @Override
-    public void close(ButtonBase button) {
-        this.closeGui(true);
-    }
+	override fun close(button: ButtonBase?) {
+		this.closeGui(true)
+	}
 }

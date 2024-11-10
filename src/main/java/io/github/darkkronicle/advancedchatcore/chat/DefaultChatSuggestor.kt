@@ -5,77 +5,65 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.chat;
+package io.github.darkkronicle.advancedchatcore.chat
 
-import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ChatInputSuggestor;
+import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gui.DrawContext
+import net.minecraft.client.gui.screen.ChatInputSuggestor
 
-/** Handles the CommandSuggestor for the chat */
+/** Handles the CommandSuggestor for the chat  */
 @Environment(EnvType.CLIENT)
-public class DefaultChatSuggestor extends AdvancedChatScreenSection {
+class DefaultChatSuggestor(screen: AdvancedChatScreen?) : AdvancedChatScreenSection(screen) {
 
-    private ChatInputSuggestor commandSuggestor;
+	private var commandSuggestor: ChatInputSuggestor? = null
 
-    public DefaultChatSuggestor(AdvancedChatScreen screen) {
-        super(screen);
-    }
+	override fun onChatFieldUpdate(chatText: String?, text: String) {
+		commandSuggestor!!.setWindowActive(text != screen.originalChatText)
+		commandSuggestor!!.refresh()
+	}
 
-    @Override
-    public void onChatFieldUpdate(String chatText, String text) {
-        this.commandSuggestor.setWindowActive(!text.equals(getScreen().getOriginalChatText()));
-        this.commandSuggestor.refresh();
-    }
+	override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+		return commandSuggestor!!.keyPressed(keyCode, scanCode, modifiers)
+	}
 
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return this.commandSuggestor.keyPressed(keyCode, scanCode, modifiers);
-    }
+	override fun render(context: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
+		commandSuggestor!!.render(context, mouseX, mouseY)
+	}
 
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
-        this.commandSuggestor.render(context, mouseX, mouseY);
-    }
+	override fun setChatFromHistory(hist: String?) {
+		commandSuggestor!!.setWindowActive(false)
+	}
 
-    @Override
-    public void setChatFromHistory(String hist) {
-        this.commandSuggestor.setWindowActive(false);
-    }
+	override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
+		return commandSuggestor!!.mouseScrolled(verticalAmount)
+	}
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        return this.commandSuggestor.mouseScrolled(verticalAmount);
-    }
+	override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+		return commandSuggestor!!.mouseClicked(mouseX, mouseY, button)
+	}
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return this.commandSuggestor.mouseClicked(mouseX, mouseY, button);
-    }
+	override fun resize(width: Int, height: Int) {
+		commandSuggestor!!.refresh()
+	}
 
-    @Override
-    public void resize(int width, int height) {
-        this.commandSuggestor.refresh();
-    }
-
-    @Override
-    public void initGui() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        AdvancedChatScreen screen = getScreen();
-        this.commandSuggestor =
-                new ChatInputSuggestor(
-                        client,
-                        screen,
-                        screen.chatField,
-                        client.textRenderer,
-                        false,
-                        false,
-                        1,
-                        10,
-                        true,
-                        -805306368);
-        this.commandSuggestor.refresh();
-    }
+	override fun initGui() {
+		val client = MinecraftClient.getInstance()
+		val screen = screen
+		this.commandSuggestor =
+			ChatInputSuggestor(
+				client,
+				screen,
+				screen.chatField,
+				client.textRenderer,
+				false,
+				false,
+				1,
+				10,
+				true,
+				-805306368)
+		commandSuggestor!!.refresh()
+	}
 }

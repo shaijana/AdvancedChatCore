@@ -5,124 +5,122 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.interfaces;
+package io.github.darkkronicle.advancedchatcore.interfaces
 
-import io.github.darkkronicle.advancedchatcore.chat.AdvancedChatScreen;
-import lombok.Getter;
-import net.minecraft.client.gui.Drawable;
-import net.minecraft.client.util.math.MatrixStack;
+import io.github.darkkronicle.advancedchatcore.chat.AdvancedChatScreen
+import lombok.Getter
+import net.minecraft.client.gui.Drawable
+import net.minecraft.client.util.math.MatrixStack
 
 /**
- * A class meant to extend onto the {@link AdvancedChatScreen}
+ * A class meant to extend onto the [AdvancedChatScreen]
  *
- * <p>This is used so that many modules can add onto the screen without problems occuring.
+ *
+ * This is used so that many modules can add onto the screen without problems occuring.
  */
-public abstract class AdvancedChatScreenSection implements Drawable {
+abstract class AdvancedChatScreenSection(
+	/** The [AdvancedChatScreen] that is linked to this section  */
+	@field:Getter private val screen: AdvancedChatScreen?
+) : Drawable {
 
-    /** The {@link AdvancedChatScreen} that is linked to this section */
-    @Getter private final AdvancedChatScreen screen;
+	/** Triggers when the gui is initiated  */
+	open fun initGui() {}
 
-    public AdvancedChatScreenSection(AdvancedChatScreen screen) {
-        this.screen = screen;
-    }
+	/**
+	 * Triggered when the window is resized
+	 *
+	 * @param width Window width
+	 * @param height Window height
+	 */
+	open fun resize(width: Int, height: Int) {}
 
-    /** Triggers when the gui is initiated */
-    public void initGui() {}
+	/** Triggered when the GUI is closed  */
+	fun removed() {}
 
-    /**
-     * Triggered when the window is resized
-     *
-     * @param width Window width
-     * @param height Window height
-     */
-    public void resize(int width, int height) {}
+	/**
+	 * Triggered when the chatfield text is pudated
+	 *
+	 * @param chatText Updated value (?)
+	 * @param text The text of the chatfield
+	 */
+	open fun onChatFieldUpdate(chatText: String?, text: String) {}
 
-    /** Triggered when the GUI is closed */
-    public void removed() {}
+	/**
+	 * Triggered when a key is pressed
+	 *
+	 * @param keyCode Keycode
+	 * @param scanCode Scancode
+	 * @param modifiers Modifiers
+	 * @return If it was handled and should stop.
+	 */
+	open fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+		return false
+	}
 
-    /**
-     * Triggered when the chatfield text is pudated
-     *
-     * @param chatText Updated value (?)
-     * @param text The text of the chatfield
-     */
-    public void onChatFieldUpdate(String chatText, String text) {}
+	/**
+	 * Triggered when the mouse is scrolled
+	 *
+	 * @param mouseX MouseX
+	 * @param mouseY MouseY
+	 * @param amount Scroll amount
+	 * @return If it was handled and should stop.
+	 */
+	open fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
+		return false
+	}
 
-    /**
-     * Triggered when a key is pressed
-     *
-     * @param keyCode Keycode
-     * @param scanCode Scancode
-     * @param modifiers Modifiers
-     * @return If it was handled and should stop.
-     */
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return false;
-    }
+	/**
+	 * Triggered when the mouse is clicked
+	 *
+	 * @param mouseX MouseX
+	 * @param mouseY MouseY
+	 * @param button Mouse button
+	 * @return If it was handled and should stop.
+	 */
+	open fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+		return false
+	}
 
-    /**
-     * Triggered when the mouse is scrolled
-     *
-     * @param mouseX MouseX
-     * @param mouseY MouseY
-     * @param amount Scroll amount
-     * @return If it was handled and should stop.
-     */
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount){
-        return false;
-    }
+	/**
+	 * Triggered when the mouse click is released
+	 *
+	 * @param mouseX MouseX
+	 * @param mouseY MouseY
+	 * @param mouseButton Mouse button
+	 * @return If it was handled and should stop.
+	 */
+	fun mouseReleased(mouseX: Double, mouseY: Double, mouseButton: Int): Boolean {
+		return false
+	}
 
-    /**
-     * Triggered when the mouse is clicked
-     *
-     * @param mouseX MouseX
-     * @param mouseY MouseY
-     * @param button Mouse button
-     * @return If it was handled and should stop.
-     */
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return false;
-    }
+	/**
+	 * @param mouseX
+	 * @param mouseY
+	 * @param button
+	 * @param deltaX
+	 * @param deltaY
+	 * @return If it was handled and should stop.
+	 */
+	fun mouseDragged(
+		mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double
+	): Boolean {
+		return false
+	}
 
-    /**
-     * Triggered when the mouse click is released
-     *
-     * @param mouseX MouseX
-     * @param mouseY MouseY
-     * @param mouseButton Mouse button
-     * @return If it was handled and should stop.
-     */
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        return false;
-    }
+	/**
+	 * Called when the chat field gets set due to history (up arrows)
+	 *
+	 * @param hist History set from
+	 */
+	open fun setChatFromHistory(hist: String?) {}
 
-    /**
-     * @param mouseX
-     * @param mouseY
-     * @param button
-     * @param deltaX
-     * @param deltaY
-     * @return If it was handled and should stop.
-     */
-    public boolean mouseDragged(
-            double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        return false;
-    }
-
-    /**
-     * Called when the chat field gets set due to history (up arrows)
-     *
-     * @param hist History set from
-     */
-    public void setChatFromHistory(String hist) {}
-
-    /**
-     * Called when the screen renders.
-     *
-     * @param matrixStack MatrixStack
-     * @param mouseX MouseX
-     * @param mouseY MouseY
-     * @param partialTicks Partial tick from the last tick
-     */
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {}
+	/**
+	 * Called when the screen renders.
+	 *
+	 * @param matrixStack MatrixStack
+	 * @param mouseX MouseX
+	 * @param mouseY MouseY
+	 * @param partialTicks Partial tick from the last tick
+	 */
+	fun render(matrixStack: MatrixStack?, mouseX: Int, mouseY: Int, partialTicks: Float) {}
 }

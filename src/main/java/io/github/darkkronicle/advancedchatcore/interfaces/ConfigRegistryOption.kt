@@ -5,81 +5,80 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.interfaces;
+package io.github.darkkronicle.advancedchatcore.interfaces
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import fi.dy.masa.malilib.config.IConfigOptionListEntry;
-import fi.dy.masa.malilib.config.options.ConfigBoolean;
-import io.github.darkkronicle.advancedchatcore.config.SaveableConfig;
-import java.util.Map;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import fi.dy.masa.malilib.config.IConfigOptionListEntry
+import fi.dy.masa.malilib.config.options.ConfigBoolean
+import io.github.darkkronicle.advancedchatcore.config.SaveableConfig
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
 
 /**
- * A {@link RegistryOption} that can be saved and loaded from a JSON file.
+ * A [RegistryOption] that can be saved and loaded from a JSON file.
  *
  * @param <TYPE>
- */
+</TYPE> */
 @Environment(EnvType.CLIENT)
-public interface ConfigRegistryOption<TYPE>
-        extends RegistryOption<TYPE>, IConfigOptionListEntry, IJsonApplier {
-    /**
-     * Get's a configurable boolean for whether or not the option is active.
-     *
-     * @return Configurable boolean
-     */
-    SaveableConfig<ConfigBoolean> getActive();
+interface ConfigRegistryOption<TYPE>
+	: RegistryOption<TYPE>, IConfigOptionListEntry, IJsonApplier {
 
-    /**
-     * Get's if the option is currently active.
-     *
-     * @return If the option is active
-     */
-    @Override
-    default boolean isActive() {
-        return getActive().config.getBooleanValue();
-    }
+	/**
+	 * Get's a configurable boolean for whether or not the option is active.
+	 *
+	 * @return Configurable boolean
+	 */
+	val active: SaveableConfig<ConfigBoolean>
 
-    /**
-     * Save's the config option and the object that it is wrapping.
-     *
-     * <p>By default it will only save if the option is active or not, but if the {@link TYPE}
-     * implements {@link IJsonApplier} it will also save/load that object.
-     *
-     * @return Serialized object
-     */
-    @Override
-    default JsonObject save() {
-        JsonObject obj = new JsonObject();
-        obj.add(getActive().key, getActive().config.getAsJsonElement());
-        JsonObject extra = null;
-        if (getOption() instanceof IJsonApplier) {
-            extra = ((IJsonApplier) getOption()).save();
-        }
-        if (extra != null) {
-            for (Map.Entry<String, JsonElement> e : extra.entrySet()) {
-                obj.add(e.getKey(), e.getValue());
-            }
-        }
-        return obj;
-    }
+	/**
+	 * Get's if the option is currently active.
+	 *
+	 * @return If the option is active
+	 */
+	override fun isActive(): Boolean {
+		return active.config.getBooleanValue()
+	}
 
-    /**
-     * Load's the config option and the object that it is wrapping.
-     *
-     * <p>By default it will only load if the option is active or not, but if the {@link TYPE}
-     * implements {@link IJsonApplier} it will also save/load that object.
-     */
-    @Override
-    default void load(JsonElement element) {
-        if (element == null || !element.isJsonObject()) {
-            return;
-        }
-        JsonObject obj = element.getAsJsonObject();
-        getActive().config.setValueFromJsonElement(obj.get(getActive().key));
-        if (getOption() instanceof IJsonApplier) {
-            ((IJsonApplier) getOption()).load(obj);
-        }
-    }
+	/**
+	 * Save's the config option and the object that it is wrapping.
+	 *
+	 *
+	 * By default it will only save if the option is active or not, but if the [TYPE]
+	 * implements [IJsonApplier] it will also save/load that object.
+	 *
+	 * @return Serialized object
+	 */
+	override fun save(): JsonObject {
+		val obj: JsonObject = JsonObject()
+		obj.add(active.key, active.config.getAsJsonElement())
+		var extra: JsonObject? = null
+		if (getOption() is IJsonApplier) {
+			extra = (getOption() as IJsonApplier).save()
+		}
+		if (extra != null) {
+			for (e: Map.Entry<String?, JsonElement?> in extra.entrySet()) {
+				obj.add(e.key, e.value)
+			}
+		}
+		return obj
+	}
+
+	/**
+	 * Load's the config option and the object that it is wrapping.
+	 *
+	 *
+	 * By default it will only load if the option is active or not, but if the [TYPE]
+	 * implements [IJsonApplier] it will also save/load that object.
+	 */
+	override fun load(element: JsonElement?) {
+		if (element == null || !element.isJsonObject()) {
+			return
+		}
+		val obj: JsonObject = element.getAsJsonObject()
+		active.config.setValueFromJsonElement(obj.get(active.key))
+		if (getOption() is IJsonApplier) {
+			(getOption() as IJsonApplier).load(obj)
+		}
+	}
 }

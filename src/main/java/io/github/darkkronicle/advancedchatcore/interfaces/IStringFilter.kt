@@ -5,12 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.interfaces;
+package io.github.darkkronicle.advancedchatcore.interfaces
 
-import java.util.Optional;
+import java.util.*
 
-/** An interface to modify raw string */
-public interface IStringFilter {
+/** An interface to modify raw string  */
+interface IStringFilter {
 
-    Optional<String> filter(String input);
+	fun filter(input: String?): Optional<String?>?
 }

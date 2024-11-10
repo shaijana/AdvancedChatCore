@@ -5,11 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.interfaces;
+package io.github.darkkronicle.advancedchatcore.interfaces
 
-import fi.dy.masa.malilib.gui.button.ButtonBase;
+import fi.dy.masa.malilib.gui.button.ButtonBase
 
-public interface IClosable {
+interface IClosable {
 
-    void close(ButtonBase button);
+	fun close(button: ButtonBase?)
 }

@@ -5,424 +5,414 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.chat;
+package io.github.darkkronicle.advancedchatcore.chat
 
-import fi.dy.masa.malilib.gui.GuiBase;
-import fi.dy.masa.malilib.gui.button.ButtonBase;
-import fi.dy.masa.malilib.util.KeyCodes;
-import io.github.darkkronicle.advancedchatcore.AdvancedChatCore;
-import io.github.darkkronicle.advancedchatcore.config.ConfigStorage;
-import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler;
-import io.github.darkkronicle.advancedchatcore.gui.IconButton;
-import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection;
-import io.github.darkkronicle.advancedchatcore.util.Color;
-import io.github.darkkronicle.advancedchatcore.util.RowList;
-import lombok.Getter;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import fi.dy.masa.malilib.gui.GuiBase
+import fi.dy.masa.malilib.gui.button.ButtonBase
+import fi.dy.masa.malilib.util.KeyCodes
+import io.github.darkkronicle.advancedchatcore.AdvancedChatCore
+import io.github.darkkronicle.advancedchatcore.config.ConfigStorage
+import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler
+import io.github.darkkronicle.advancedchatcore.gui.IconButton
+import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection
+import io.github.darkkronicle.advancedchatcore.util.Color
+import io.github.darkkronicle.advancedchatcore.util.RowList
+import lombok.Getter
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gui.DrawContext
+import net.minecraft.client.option.KeyBinding
+import net.minecraft.client.util.InputUtil
+import net.minecraft.text.MutableText
+import net.minecraft.text.Text
+import net.minecraft.util.Identifier
+import net.minecraft.util.math.MathHelper
+import java.util.*
+import java.util.function.Consumer
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
+open class AdvancedChatScreen() : GuiBase() {
 
-public class AdvancedChatScreen extends GuiBase {
+	private var finalHistory = ""
+	private var messageHistorySize = -1
+	private var startHistory = -1
+	private var passEvents = false
 
-    public static boolean PERMANENT_FOCUS = false;
+	/** Chat field at the bottom of the screen  */
+	@Getter
+	var chatField: AdvancedTextField? = null
 
-    private String finalHistory = "";
-    private int messageHistorySize = -1;
-    private int startHistory = -1;
-    private boolean passEvents = false;
+	/** What the chat box started out with  */
+	@Getter
+	private var originalChatText = ""
 
-    /** Chat field at the bottom of the screen */
-    @Getter protected AdvancedTextField chatField;
+	private val sections: MutableList<AdvancedChatScreenSection> = ArrayList()
 
-    /** What the chat box started out with */
-    @Getter private String originalChatText = "";
+	@Getter
+	private val rightSideButtons = RowList<ButtonBase>()
 
-    private static String last = "";
-    private final List<AdvancedChatScreenSection> sections = new ArrayList<>();
+	@Getter
+	private val leftSideButtons = RowList<ButtonBase>()
 
-    @Getter
-    private final RowList<ButtonBase> rightSideButtons = new RowList<>();
+	override fun closeGui(showParent: Boolean) {
+		if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.booleanValue) {
+			last = chatField!!.text
+		}
+		super.closeGui(showParent)
+	}
 
-    @Getter
-    private final RowList<ButtonBase> leftSideButtons = new RowList<>();
+	init {
+		setupSections()
+	}
 
-    @Override
-    protected void closeGui(boolean showParent) {
-        if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.getBooleanValue()) {
-            last = chatField.getText();
-        }
-        super.closeGui(showParent);
-    }
+	constructor(passEvents: Boolean) : this() {
+		this.passEvents = passEvents
+	}
 
-    public AdvancedChatScreen() {
-        super();
-        setupSections();
-    }
+	constructor(indexOfLast: Int) : this() {
+		startHistory = indexOfLast
+	}
 
-    public AdvancedChatScreen(boolean passEvents) {
-        this();
-        this.passEvents = passEvents;
-    }
+	constructor(originalChatText: String) : this() {
+		this.originalChatText = originalChatText
+	}
 
-    public AdvancedChatScreen(int indexOfLast) {
-        this();
-        startHistory = indexOfLast;
-    }
+	private fun setupSections() {
+		for (supplier in ChatScreenSectionHolder.Companion.getInstance().getSectionSuppliers()) {
+			val section: AdvancedChatScreenSection = supplier.apply(this)
+			if (section != null) {
+				sections.add(section)
+			}
+		}
+	}
 
-    public AdvancedChatScreen(String originalChatText) {
-        this();
-        this.originalChatText = originalChatText;
-    }
+	private val color: Color?
+		get() = ConfigStorage.ChatScreen.COLOR.config.get()
 
-    private void setupSections() {
-        for (Function<AdvancedChatScreen, AdvancedChatScreenSection> supplier : ChatScreenSectionHolder.getInstance().getSectionSuppliers()) {
-            AdvancedChatScreenSection section = supplier.apply(this);
-            if (section != null) {
-                sections.add(section);
-            }
-        }
-    }
+	fun resetCurrentMessage() {
+		this.messageHistorySize = client!!.inGameHud.chatHud.messageHistory.size
+	}
 
-    private Color getColor() {
-        return ConfigStorage.ChatScreen.COLOR.config.get();
-    }
+	override fun charTyped(charIn: Char, modifiers: Int): Boolean {
+		if (passEvents) {
+			return true
+		}
+		return super.charTyped(charIn, modifiers)
+	}
 
-    public void resetCurrentMessage() {
-        this.messageHistorySize = this.client.inGameHud.getChatHud().getMessageHistory().size();
-    }
+	override fun initGui() {
+		super.initGui()
+		rightSideButtons.clear()
+		leftSideButtons.clear()
+		resetCurrentMessage()
+		this.chatField =
+			object : AdvancedTextField(
+				this.textRenderer,
+				4,
+				this.height - 12,
+				this.width - 10,
+				12,
+				Text.translatable("chat.editBox")) {
+				override fun getNarrationMessage(): MutableText {
+					return null
+				}
+			}
+		if (ConfigStorage.ChatScreen.MORE_TEXT.config.booleanValue) {
+			chatField.setMaxLength(64000)
+		} else {
+			chatField.setMaxLength(256)
+		}
+		chatField.setDrawsBackground(false)
+		if (this.originalChatText != "") {
+			chatField.setText(this.originalChatText)
+		} else if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.booleanValue
+			&& last != "") {
+			chatField.setText(last)
+		}
+		chatField.setChangedListener(Consumer { chatText: String -> this.onChatFieldUpdate(chatText) })
 
-    @Override
-    public boolean charTyped(char charIn, int modifiers) {
-        if (passEvents) {
-            return true;
-        }
-        return super.charTyped(charIn, modifiers);
-    }
+		// Add settings button
+		rightSideButtons.add("settings", IconButton(0, 0, 14, 64, Identifier.of(AdvancedChatCore.Companion.MOD_ID, "textures/gui/settings.png")
+		) { button: IconButton? ->
+			openGui(
+				GuiConfigHandler.Companion.getInstance().getDefaultScreen())
+		})
 
-    public void initGui() {
-        super.initGui();
-        this.rightSideButtons.clear();
-        this.leftSideButtons.clear();
-        resetCurrentMessage();
-        this.chatField =
-                new AdvancedTextField(
-                        this.textRenderer,
-                        4,
-                        this.height - 12,
-                        this.width - 10,
-                        12,
-                        Text.translatable("chat.editBox")) {
-                    protected MutableText getNarrationMessage() {
-                        return null;
-                    }
-                };
-        if (ConfigStorage.ChatScreen.MORE_TEXT.config.getBooleanValue()) {
-            this.chatField.setMaxLength(64000);
-        } else {
-            this.chatField.setMaxLength(256);
-        }
-        this.chatField.setDrawsBackground(false);
-        if (!this.originalChatText.equals("")) {
-            this.chatField.setText(this.originalChatText);
-        } else if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.getBooleanValue()
-                && !last.equals("")) {
-            this.chatField.setText(last);
-        }
-        this.chatField.setChangedListener(this::onChatFieldUpdate);
+		this.addSelectableChild(this.chatField)
 
-        // Add settings button
-        rightSideButtons.add("settings", new IconButton(0, 0, 14, 64, Identifier.of(AdvancedChatCore.MOD_ID, "textures/gui/settings.png"), (button) -> GuiBase.openGui(GuiConfigHandler.getInstance().getDefaultScreen())));
+		this.setInitialFocus(this.chatField)
 
-        this.addSelectableChild(this.chatField);
+		for (section in sections) {
+			section.initGui()
+		}
 
-        this.setInitialFocus(this.chatField);
+		var originalX = client!!.window.scaledWidth - 1
+		var y = client!!.window.scaledHeight - 30
+		for (i in 0 until rightSideButtons.rowSize()) {
+			val buttonList: List<ButtonBase> = rightSideButtons.get(i)
+			var maxHeight = 0
+			var x = originalX
+			for (button in buttonList) {
+				maxHeight = max(maxHeight, button.height)
+				x -= button.width + 1
+				button.setPosition(x, y)
+				addButton(button, null)
+			}
+			y -= maxHeight + 1
+		}
+		originalX = 1
+		y = client!!.window.scaledHeight - 30
+		for (i in 0 until leftSideButtons.rowSize()) {
+			val buttonList: List<ButtonBase> = leftSideButtons.get(i)
+			var maxHeight = 0
+			var x = originalX
+			for (button in buttonList) {
+				maxHeight = max(maxHeight, button.height)
+				button.setPosition(x, y)
+				addButton(button, null)
+				x += button.width + 1
+			}
+			y -= maxHeight + 1
+		}
+		if (startHistory >= 0) {
+			setChatFromHistory(-startHistory - 1)
+		}
+	}
 
-        for (AdvancedChatScreenSection section : sections) {
-            section.initGui();
-        }
+	override fun resize(client: MinecraftClient, width: Int, height: Int) {
+		val string = chatField!!.text
+		this.init(client, width, height)
+		this.setText(string)
+		for (section in sections) {
+			section.resize(width, height)
+		}
+	}
 
-        int originalX = client.getWindow().getScaledWidth() - 1;
-        int y = client.getWindow().getScaledHeight() - 30;
-        for (int i = 0; i < rightSideButtons.rowSize(); i++) {
-            List<ButtonBase> buttonList = rightSideButtons.get(i);
-            int maxHeight = 0;
-            int x = originalX;
-            for (ButtonBase button : buttonList) {
-                maxHeight = Math.max(maxHeight, button.getHeight());
-                x -= button.getWidth() + 1;
-                button.setPosition(x, y);
-                addButton(button, null);
-            }
-            y -= maxHeight + 1;
-        }
-        originalX = 1;
-        y = client.getWindow().getScaledHeight() - 30;
-        for (int i = 0; i < leftSideButtons.rowSize(); i++) {
-            List<ButtonBase> buttonList = leftSideButtons.get(i);
-            int maxHeight = 0;
-            int x = originalX;
-            for (ButtonBase button : buttonList) {
-                maxHeight = Math.max(maxHeight, button.getHeight());
-                button.setPosition(x, y);
-                addButton(button, null);
-                x += button.getWidth() + 1;
-            }
-            y -= maxHeight + 1;
-        }
-        if (startHistory >= 0) {
-            setChatFromHistory(-startHistory - 1);
-        }
+	override fun removed() {
+		for (section in sections) {
+			section.removed()
+		}
+	}
 
-    }
+	override fun tick() {
+		chatField!!.tick()
+	}
 
-    public void resize(MinecraftClient client, int width, int height) {
-        String string = this.chatField.getText();
-        this.init(client, width, height);
-        this.setText(string);
-        for (AdvancedChatScreenSection section : sections) {
-            section.resize(width, height);
-        }
-    }
+	private fun onChatFieldUpdate(chatText: String) {
+		val string = chatField!!.text
+		for (section in sections) {
+			section.onChatFieldUpdate(chatText, string)
+		}
+	}
 
-    @Override
-    public void removed() {
-        for (AdvancedChatScreenSection section : sections) {
-            section.removed();
-        }
-    }
+	override fun keyReleased(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+		if (passEvents) {
+			val key = InputUtil.fromKeyCode(keyCode, scanCode)
+			KeyBinding.setKeyPressed(key, false)
+		}
+		return false
+	}
 
-    public void tick() {
-        this.chatField.tick();
-    }
+	override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+		if (!passEvents) {
+			for (section in sections) {
+				if (section.keyPressed(keyCode, scanCode, modifiers)) {
+					return true
+				}
+			}
+			if (super.keyPressed(keyCode, scanCode, modifiers)) {
+				return true
+			}
+		}
+		if (keyCode == KeyCodes.KEY_ESCAPE) {
+			// Exit out
+			openGui(null)
+			return true
+		}
+		if (keyCode == KeyCodes.KEY_ENTER || keyCode == KeyCodes.KEY_KP_ENTER) {
+			val string: String = chatField!!.text.trim { it <= ' ' }
+			// Strip message and send
+			MessageSender.Companion.getInstance().sendMessage(string)
+			chatField!!.text = ""
+			last = ""
+			// Exit
+			openGui(null)
+			return true
+		}
+		if (keyCode == KeyCodes.KEY_UP) {
+			// Go through previous history
+			this.setChatFromHistory(-1)
+			return true
+		}
+		if (keyCode == KeyCodes.KEY_DOWN) {
+			// Go through previous history
+			this.setChatFromHistory(1)
+			return true
+		}
+		if (keyCode == KeyCodes.KEY_PAGE_UP) {
+			// Scroll
+			client!!.inGameHud
+				.chatHud
+				.scroll(client!!.inGameHud.chatHud.visibleLineCount - 1)
+			return true
+		}
+		if (keyCode == KeyCodes.KEY_PAGE_DOWN) {
+			// Scroll
+			client!!.inGameHud
+				.chatHud
+				.scroll(-client!!.inGameHud.chatHud.visibleLineCount + 1)
+			return true
+		}
+		if (passEvents) {
+			chatField!!.text = ""
+			val key = InputUtil.fromKeyCode(keyCode, scanCode)
+			KeyBinding.setKeyPressed(key, true)
+			KeyBinding.onKeyPressed(key)
+			return true
+		}
+		return false
+	}
 
-    private void onChatFieldUpdate(String chatText) {
-        String string = this.chatField.getText();
-        for (AdvancedChatScreenSection section : sections) {
-            section.onChatFieldUpdate(chatText, string);
-        }
-    }
+	override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
+		var verticalAmount = verticalAmount
+		if (verticalAmount > 1.0) {
+			verticalAmount = 1.0
+		}
 
-    @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (passEvents) {
-            InputUtil.Key key = InputUtil.fromKeyCode(keyCode, scanCode);
-            KeyBinding.setKeyPressed(key, false);
-        }
-        return false;
-    }
+		if (verticalAmount < -1.0) {
+			verticalAmount = -1.0
+		}
 
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (!passEvents) {
-            for (AdvancedChatScreenSection section : sections) {
-                if (section.keyPressed(keyCode, scanCode, modifiers)) {
-                    return true;
-                }
-            }
-            if (super.keyPressed(keyCode, scanCode, modifiers)) {
-                return true;
-            }
-        }
-        if (keyCode == KeyCodes.KEY_ESCAPE) {
-            // Exit out
-            GuiBase.openGui(null);
-            return true;
-        }
-        if (keyCode == KeyCodes.KEY_ENTER || keyCode == KeyCodes.KEY_KP_ENTER) {
-            String string = this.chatField.getText().trim();
-            // Strip message and send
-            MessageSender.getInstance().sendMessage(string);
-            this.chatField.setText("");
-            last = "";
-            // Exit
-            GuiBase.openGui(null);
-            return true;
-        }
-        if (keyCode == KeyCodes.KEY_UP) {
-            // Go through previous history
-            this.setChatFromHistory(-1);
-            return true;
-        }
-        if (keyCode == KeyCodes.KEY_DOWN) {
-            // Go through previous history
-            this.setChatFromHistory(1);
-            return true;
-        }
-        if (keyCode == KeyCodes.KEY_PAGE_UP) {
-            // Scroll
-            client.inGameHud
-                    .getChatHud()
-                    .scroll(this.client.inGameHud.getChatHud().getVisibleLineCount() - 1);
-            return true;
-        }
-        if (keyCode == KeyCodes.KEY_PAGE_DOWN) {
-            // Scroll
-            client.inGameHud
-                    .getChatHud()
-                    .scroll(-this.client.inGameHud.getChatHud().getVisibleLineCount() + 1);
-            return true;
-        }
-        if (passEvents) {
-            this.chatField.setText("");
-            InputUtil.Key key = InputUtil.fromKeyCode(keyCode, scanCode);
-            KeyBinding.setKeyPressed(key, true);
-            KeyBinding.onKeyPressed(key);
-            return true;
-        }
-        return false;
-    }
+		for (section in sections) {
+			if (section.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) {
+				return true
+			}
+		}
+		if (!hasShiftDown()) {
+			verticalAmount *= 7.0
+		}
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (verticalAmount > 1.0D) {
-            verticalAmount = 1.0D;
-        }
+		// Send to hud to scroll
+		client!!.inGameHud.chatHud.scroll(verticalAmount.toInt())
+		return true
+	}
 
-        if (verticalAmount < -1.0D) {
-            verticalAmount = -1.0D;
-        }
+	override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+		for (section in sections) {
+			if (section.mouseClicked(mouseX, mouseY, button)) {
+				return true
+			}
+		}
+		val hud = client!!.inGameHud.chatHud
+		if (hud.mouseClicked(mouseX, mouseY)) {
+			return true
+		}
+		val style = hud.getTextStyleAt(mouseX, mouseY)
+		if (style != null && style.clickEvent != null) {
+			if (this.handleTextClick(style)) {
+				return true
+			}
+		}
+		return (chatField!!.mouseClicked(mouseX, mouseY, button)
+				|| super.mouseClicked(mouseX, mouseY, button))
+	}
 
-        for (AdvancedChatScreenSection section : sections) {
-            if (section.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) {
-                return true;
-            }
-        }
-        if (!hasShiftDown()) {
-            verticalAmount *= 7.0D;
-        }
+	override fun mouseReleased(mouseX: Double, mouseY: Double, mouseButton: Int): Boolean {
+		for (section in sections) {
+			if (section.mouseReleased(mouseX, mouseY, mouseButton)) {
+				return true
+			}
+		}
+		return super.mouseReleased(mouseX, mouseY, mouseButton)
+	}
 
-        // Send to hud to scroll
-        client.inGameHud.getChatHud().scroll((int) verticalAmount);
-        return true;
-    }
+	override fun mouseDragged(
+		mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double
+	): Boolean {
+		for (section in sections) {
+			if (section.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
+				return true
+			}
+		}
+		return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)
+	}
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        for (AdvancedChatScreenSection section : sections) {
-            if (section.mouseClicked(mouseX, mouseY, button)) {
-                return true;
-            }
-        }
-        ChatHud hud = client.inGameHud.getChatHud();
-        if (hud.mouseClicked(mouseX, mouseY)) {
-            return true;
-        }
-        Style style = hud.getTextStyleAt(mouseX, mouseY);
-        if (style != null && style.getClickEvent() != null) {
-            if (this.handleTextClick(style)) {
-                return true;
-            }
-        }
-        return (this.chatField.mouseClicked(mouseX, mouseY, button)
-                || super.mouseClicked(mouseX, mouseY, button));
-    }
+	override fun insertText(text: String, override: Boolean) {
+		if (override) {
+			chatField!!.text = text
+		} else {
+			chatField!!.write(text)
+		}
+	}
 
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        for (AdvancedChatScreenSection section : sections) {
-            if (section.mouseReleased(mouseX, mouseY, mouseButton)) {
-                return true;
-            }
-        }
-        return super.mouseReleased(mouseX, mouseY, mouseButton);
-    }
+	fun setChatFromHistory(i: Int) {
+		var targetIndex = this.messageHistorySize + i
+		val maxIndex = client!!.inGameHud.chatHud.messageHistory.size
+		targetIndex = MathHelper.clamp(targetIndex, 0, maxIndex)
+		if (targetIndex != this.messageHistorySize) {
+			if (targetIndex == maxIndex) {
+				this.messageHistorySize = maxIndex
+				chatField!!.text = this.finalHistory
+			} else {
+				if (this.messageHistorySize == maxIndex) {
+					this.finalHistory = chatField!!.text
+				}
 
-    @Override
-    public boolean mouseDragged(
-            double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        for (AdvancedChatScreenSection section : sections) {
-            if (section.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
-                return true;
-            }
-        }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
-    }
+				val hist = client!!.inGameHud.chatHud.messageHistory[targetIndex]
+				chatField!!.text = hist
+				for (section in sections) {
+					section.setChatFromHistory(hist)
+				}
+				this.messageHistorySize = targetIndex
+			}
+		}
+	}
 
-    @Override
-    protected void insertText(String text, boolean override) {
-        if (override) {
-            this.chatField.setText(text);
-        } else {
-            this.chatField.write(text);
-        }
-    }
+	override fun render(context: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
+		val hud = client!!.inGameHud.chatHud
+		this.focused = this.chatField
+		chatField!!.isFocused = true
+		chatField!!.render(context, mouseX, mouseY, partialTicks)
+		renderWithoutBackground(context, mouseX, mouseY, partialTicks)
+		for (section in sections) {
+			section.render(context, mouseX, mouseY, partialTicks)
+		}
+		val style = hud.getTextStyleAt(mouseX.toDouble(), mouseY.toDouble())
+		if (style != null && style.hoverEvent != null) {
+			context.drawHoverEvent(textRenderer, style, mouseX, mouseY)
+			//this.renderTextHoverEffect(context, style, mouseX, mouseY);
+		}
+	}
 
-    public void setChatFromHistory(int i) {
-        int targetIndex = this.messageHistorySize + i;
-        int maxIndex = this.client.inGameHud.getChatHud().getMessageHistory().size();
-        targetIndex = MathHelper.clamp(targetIndex, 0, maxIndex);
-        if (targetIndex != this.messageHistorySize) {
-            if (targetIndex == maxIndex) {
-                this.messageHistorySize = maxIndex;
-                this.chatField.setText(this.finalHistory);
-            } else {
-                if (this.messageHistorySize == maxIndex) {
-                    this.finalHistory = this.chatField.getText();
-                }
+	//Copied from GuiBase, but removed background rendering.
+	private fun renderWithoutBackground(drawContext: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
+		if (this.drawContext == null || this.drawContext == drawContext == false) {
+			this.drawContext = drawContext
+		}
 
-                String hist = this.client.inGameHud.getChatHud().getMessageHistory().get(targetIndex);
-                this.chatField.setText(hist);
-                for (AdvancedChatScreenSection section : sections) {
-                    section.setChatFromHistory(hist);
-                }
-                this.messageHistorySize = targetIndex;
-            }
-        }
-    }
+		this.drawTitle(drawContext, mouseX, mouseY, partialTicks)
 
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
-        ChatHud hud = client.inGameHud.getChatHud();
-        this.setFocused(this.chatField);
-        this.chatField.setFocused(true);
-        this.chatField.render(context, mouseX, mouseY, partialTicks);
-        renderWithoutBackground(context, mouseX, mouseY, partialTicks);
-        for (AdvancedChatScreenSection section : sections) {
-            section.render(context, mouseX, mouseY, partialTicks);
-        }
-        Style style = hud.getTextStyleAt(mouseX, mouseY);
-        if (style != null && style.getHoverEvent() != null) {
-            context.drawHoverEvent(textRenderer, style, mouseX, mouseY);
-            //this.renderTextHoverEffect(context, style, mouseX, mouseY);
-        }
-    }
+		// Draw base widgets
+		this.drawWidgets(mouseX, mouseY, drawContext)
+		this.drawTextFields(mouseX, mouseY, drawContext)
+		this.drawButtons(mouseX, mouseY, partialTicks, drawContext)
 
-    //Copied from GuiBase, but removed background rendering.
-    private void renderWithoutBackground(DrawContext drawContext, int mouseX, int mouseY, float partialTicks) {
-        if (this.drawContext == null || this.drawContext.equals(drawContext) == false)
-        {
-            this.drawContext = drawContext;
-        }
+		this.drawContents(drawContext, mouseX, mouseY, partialTicks)
 
-        this.drawTitle(drawContext, mouseX, mouseY, partialTicks);
+		this.drawButtonHoverTexts(mouseX, mouseY, partialTicks, drawContext)
+		this.drawHoveredWidget(mouseX, mouseY, drawContext)
+		this.drawGuiMessages(drawContext)
+	}
 
-        // Draw base widgets
-        this.drawWidgets(mouseX, mouseY, drawContext);
-        this.drawTextFields(mouseX, mouseY, drawContext);
-        this.drawButtons(mouseX, mouseY, partialTicks, drawContext);
+	override fun drawScreenBackground(mouseX: Int, mouseY: Int) {
+	}
 
-        this.drawContents(drawContext, mouseX, mouseY, partialTicks);
+	private fun setText(text: String) {
+		chatField!!.text = text
+	}
 
-        this.drawButtonHoverTexts(mouseX, mouseY, partialTicks, drawContext);
-        this.drawHoveredWidget(mouseX, mouseY, drawContext);
-        this.drawGuiMessages(drawContext);
-    }
+	companion object {
 
-    @Override
-    protected void drawScreenBackground(int mouseX, int mouseY) {
+		var PERMANENT_FOCUS: Boolean = false
 
-    }
-
-    private void setText(String text) {
-        this.chatField.setText(text);
-    }
+		private var last = ""
+	}
 }

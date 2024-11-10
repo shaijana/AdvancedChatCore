@@ -5,33 +5,33 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.util;
+package io.github.darkkronicle.advancedchatcore.util
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.AllArgsConstructor
+import lombok.EqualsAndHashCode
+import lombok.ToString
 
 /**
  * A class to store data about a match.
  *
- * <p>This class is comparable based on where it starts.
+ *
+ * This class is comparable based on where it starts.
  */
 @EqualsAndHashCode
 @ToString
 @AllArgsConstructor
-public class StringMatch implements Comparable<StringMatch> {
+class StringMatch : Comparable<StringMatch> {
 
-    /** The content that was matched */
-    public String match;
+	/** The content that was matched  */
+	var match: String? = null
 
-    /** The index of the start of the match */
-    public Integer start;
+	/** The index of the start of the match  */
+	var start: Int? = null
 
-    /** The index of the end of the match */
-    public Integer end;
+	/** The index of the end of the match  */
+	var end: Int? = null
 
-    @Override
-    public int compareTo(StringMatch o) {
-        return start.compareTo(o.start);
-    }
+	override fun compareTo(o: StringMatch): Int {
+		return start!!.compareTo(o.start!!)
+	}
 }

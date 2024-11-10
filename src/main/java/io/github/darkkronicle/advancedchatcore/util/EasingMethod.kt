@@ -5,65 +5,64 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.util;
+package io.github.darkkronicle.advancedchatcore.util
 
-/** A class to handle an easing method. Examples at https://easings.net/ */
-public interface EasingMethod {
-    /**
-     * Applies the current percentage of the ease.
-     *
-     * @param x Double from 0-1 (will often clamp at those values)
-     * @return The easing value (often clamped at 0-1)
-     */
-    double apply(double x);
+/** A class to handle an easing method. Examples at https://easings.net/  */
+interface EasingMethod {
 
-    /** Useful easing methods */
-    enum Method implements EasingMethod {
-        /** Implements the linear easing function. It returns the same value. x = x */
-        LINEAR(x -> x),
+	/**
+	 * Applies the current percentage of the ease.
+	 *
+	 * @param x Double from 0-1 (will often clamp at those values)
+	 * @return The easing value (often clamped at 0-1)
+	 */
+	fun apply(x: Double): Double
 
-        /**
-         * Implements the sine easing function.
-         *
-         * <p>https://easings.net/#easeInSine
-         */
-        SINE(x -> 1 - Math.cos((x * Math.PI) / 2)),
+	/** Useful easing methods  */
+	enum class Method(private val method: EasingMethod) : EasingMethod {
 
-        /**
-         * Implements the quad easing function.
-         *
-         * <p>https://easings.net/#easeInQuad
-         */
-        QUAD(x -> x * x),
+		/** Implements the linear easing function. It returns the same value. x = x  */
+		LINEAR(EasingMethod { x: Double -> x }),
 
-        /**
-         * Implements the quart easing function.
-         *
-         * <p>https://easings.net/#easeInQuart
-         */
-        QUART(x -> x * x * x * x),
+		/**
+		 * Implements the sine easing function.
+		 *
+		 *
+		 * https://easings.net/#easeInSine
+		 */
+		SINE(EasingMethod { x: Double -> 1 - cos((x * Math.PI) / 2) }),
 
-        /**
-         * Implements the circ easing function.
-         *
-         * <p>https://easings.net/#easeInCirc
-         */
-        CIRC(x -> 1 - Math.sqrt(1 - Math.pow(x, 2)));
+		/**
+		 * Implements the quad easing function.
+		 *
+		 *
+		 * https://easings.net/#easeInQuad
+		 */
+		QUAD(EasingMethod { x: Double -> x * x }),
 
-        private final EasingMethod method;
+		/**
+		 * Implements the quart easing function.
+		 *
+		 *
+		 * https://easings.net/#easeInQuart
+		 */
+		QUART(EasingMethod { x: Double -> x * x * x * x }),
 
-        Method(EasingMethod method) {
-            this.method = method;
-        }
+		/**
+		 * Implements the circ easing function.
+		 *
+		 *
+		 * https://easings.net/#easeInCirc
+		 */
+		CIRC(EasingMethod { x: Double -> 1 - sqrt(1 - x.pow(2)) });
 
-        @Override
-        public double apply(double x) {
-            if (x < 0) {
-                return 0;
-            } else if (x > 1) {
-                return 1;
-            }
-            return method.apply(x);
-        }
-    }
+		override fun apply(x: Double): Double {
+			if (x < 0) {
+				return 0
+			} else if (x > 1) {
+				return 1
+			}
+			return method.apply(x)
+		}
+	}
 }

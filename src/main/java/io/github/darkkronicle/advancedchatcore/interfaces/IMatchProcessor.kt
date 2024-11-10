@@ -5,66 +5,61 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.interfaces;
+package io.github.darkkronicle.advancedchatcore.interfaces
 
-import io.github.darkkronicle.advancedchatcore.util.SearchResult;
-import net.minecraft.text.Text;
-import org.jetbrains.annotations.Nullable;
+import io.github.darkkronicle.advancedchatcore.interfaces.IMatchProcessor.Result
+import io.github.darkkronicle.advancedchatcore.util.SearchResult
+import net.minecraft.text.Text
 
 /**
  * An interface to receive text and matches to process.
  *
- * <p>Similar to {@link IMessageProcessor} but it takes matches and can return a {@link Result}
+ *
+ * Similar to [IMessageProcessor] but it takes matches and can return a [Result]
  */
-public interface IMatchProcessor extends IMessageProcessor {
-    /** Different outcome's the processor can have */
-    enum Result {
-        FAIL(false, true, false),
-        PROCESSED(true, false, false),
-        FORCE_FORWARD(true, true, true),
-        FORCE_STOP(true, false, true);
+interface IMatchProcessor : IMessageProcessor {
 
-        public final boolean success;
-        public final boolean forward;
-        public final boolean force;
+	/** Different outcome's the processor can have  */
+	enum class Result(val success: Boolean, val forward: Boolean, val force: Boolean) {
 
-        Result(boolean success, boolean forward, boolean force) {
-            this.success = success;
-            this.forward = forward;
-            this.force = force;
-        }
+		FAIL(false, true, false),
+		PROCESSED(true, false, false),
+		FORCE_FORWARD(true, true, true),
+		FORCE_STOP(true, false, true);
 
-        public static Result getFromBool(boolean success) {
-            if (!success) {
-                return FAIL;
-            }
-            return PROCESSED;
-        }
-    }
+		companion object {
 
-    @Override
-    default boolean process(Text text, Text unfiltered) {
-        return processMatches(text, unfiltered, null).success;
-    }
+			fun getFromBool(success: Boolean): Result {
+				if (!success) {
+					return FAIL
+				}
+				return PROCESSED
+			}
+		}
+	}
 
-    /**
-     * Process specific matches and return how the rest of the processors should be handled
-     *
-     * @param text Final text
-     * @param unfiltered Unfiltered version of text. If not available null.
-     * @param search {@link SearchResult} matches
-     * @return The {@link Result} that the method performed
-     */
-    Result processMatches(
-            Text text, @Nullable Text unfiltered, @Nullable SearchResult search);
+	override fun process(text: Text, unfiltered: Text?): Boolean {
+		return processMatches(text, unfiltered, null).success
+	}
 
-    /**
-     * Whether or not this processor should only trigger when matches are present. If false {@link
-     * SearchResult} can be null.
-     *
-     * @return If this processor should only trigger when matches are present
-     */
-    default boolean matchesOnly() {
-        return true;
-    }
+	/**
+	 * Process specific matches and return how the rest of the processors should be handled
+	 *
+	 * @param text Final text
+	 * @param unfiltered Unfiltered version of text. If not available null.
+	 * @param search [SearchResult] matches
+	 * @return The [Result] that the method performed
+	 */
+	fun processMatches(
+		text: Text?, @Nullable unfiltered: Text?, @Nullable search: SearchResult?
+	): Result
+
+	/**
+	 * Whether or not this processor should only trigger when matches are present. If false [ ] can be null.
+	 *
+	 * @return If this processor should only trigger when matches are present
+	 */
+	fun matchesOnly(): Boolean {
+		return true
+	}
 }

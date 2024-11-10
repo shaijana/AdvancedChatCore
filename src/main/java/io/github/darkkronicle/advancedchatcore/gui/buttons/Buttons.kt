@@ -5,20 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.gui.buttons;
+package io.github.darkkronicle.advancedchatcore.gui.buttons
 
-import fi.dy.masa.malilib.util.StringUtils;
+import fi.dy.masa.malilib.util.StringUtils
 
-public enum Buttons {
-    BACK("advancedchat.gui.button.back");
+enum class Buttons(private val translationString: String) {
+	BACK("advancedchat.gui.button.back");
 
-    private final String translationString;
-
-    Buttons(String translationString) {
-        this.translationString = translationString;
-    }
-
-    public NamedSimpleButton createButton(int x, int y) {
-        return new NamedSimpleButton(x, y, StringUtils.translate(translationString));
-    }
+	fun createButton(x: Int, y: Int): NamedSimpleButton {
+		return NamedSimpleButton(x, y, StringUtils.translate(translationString))
+	}
 }

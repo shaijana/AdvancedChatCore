@@ -1,84 +1,74 @@
-package io.github.darkkronicle.advancedchatcore.konstruct;
+package io.github.darkkronicle.advancedchatcore.konstruct
 
-import io.github.darkkronicle.Konstruct.functions.ObjectFunction;
-import io.github.darkkronicle.Konstruct.nodes.Node;
-import io.github.darkkronicle.Konstruct.parser.IntRange;
-import io.github.darkkronicle.Konstruct.parser.ParseContext;
-import io.github.darkkronicle.Konstruct.parser.Result;
-import io.github.darkkronicle.Konstruct.type.IntegerObject;
-import io.github.darkkronicle.Konstruct.type.KonstructObject;
-import io.github.darkkronicle.Konstruct.type.StringObject;
-import io.github.darkkronicle.advancedchatcore.util.StringMatch;
+import io.github.darkkronicle.Konstruct.functions.ObjectFunction
+import io.github.darkkronicle.Konstruct.nodes.Node
+import io.github.darkkronicle.Konstruct.parser.ParseContext
+import io.github.darkkronicle.Konstruct.parser.Result
+import io.github.darkkronicle.Konstruct.type.IntegerObject
+import io.github.darkkronicle.Konstruct.type.KonstructObject
+import io.github.darkkronicle.Konstruct.type.StringObject
+import io.github.darkkronicle.advancedchatcore.util.StringMatch
 
-import java.util.List;
+class StringMatchObject(private val result: StringMatch) : KonstructObject<StringMatchObject?>(FUNCTIONS) {
 
-public class StringMatchObject extends KonstructObject<StringMatchObject> {
+	val string: String
+		get() {
+			return result.toString()
+		}
 
-    private final StringMatch result;
+	val typeName: String
+		get() {
+			return "string_match"
+		}
 
-    private final static List<ObjectFunction<StringMatchObject>> FUNCTIONS = List.of(
-            new ObjectFunction<>() {
-                @Override
-                public Result parse(ParseContext context, StringMatchObject self, List<Node> input) {
-                    return Result.success(new IntegerObject(self.result.start));
-                }
+	companion object {
 
-                @Override
-                public String getName() {
-                    return "getStart";
-                }
+		private val FUNCTIONS: List<ObjectFunction<StringMatchObject>> = java.util.List.of(
+			object : ObjectFunction() {
+				override fun parse(context: ParseContext?, self: StringMatchObject, input: List<Node?>?): Result {
+					return Result.success(IntegerObject(self.result.start))
+				}
 
-                @Override
-                public IntRange getArgumentCount() {
-                    return IntRange.of(0);
-                }
-            },
-            new ObjectFunction<>() {
-                @Override
-                public Result parse(ParseContext context, StringMatchObject self, List<Node> input) {
-                    return Result.success(new IntegerObject(self.result.end));
-                }
+				val name: String
+					get() {
+						return "getStart"
+					}
 
-                @Override
-                public String getName() {
-                    return "getEnd";
-                }
+				val argumentCount: IntRange
+					get() {
+						return IntRange.of(0)
+					}
+			},
+			object : ObjectFunction() {
+				override fun parse(context: ParseContext?, self: StringMatchObject, input: List<Node?>?): Result {
+					return Result.success(IntegerObject(self.result.end))
+				}
 
-                @Override
-                public IntRange getArgumentCount() {
-                    return IntRange.of(0);
-                }
-            },
-            new ObjectFunction<>() {
-                @Override
-                public Result parse(ParseContext context, StringMatchObject self, List<Node> input) {
-                    return Result.success(new StringObject(self.result.match));
-                }
+				val name: String
+					get() {
+						return "getEnd"
+					}
 
-                @Override
-                public String getName() {
-                    return "getMessage";
-                }
+				val argumentCount: IntRange
+					get() {
+						return IntRange.of(0)
+					}
+			},
+			object : ObjectFunction() {
+				override fun parse(context: ParseContext?, self: StringMatchObject, input: List<Node?>?): Result {
+					return Result.success(StringObject(self.result.match))
+				}
 
-                @Override
-                public IntRange getArgumentCount() {
-                    return IntRange.of(0);
-                }
-            }
-    );
+				val name: String
+					get() {
+						return "getMessage"
+					}
 
-    public StringMatchObject(StringMatch result) {
-        super(FUNCTIONS);
-        this.result = result;
-    }
-
-    @Override
-    public String getString() {
-        return result.toString();
-    }
-
-    @Override
-    public String getTypeName() {
-        return "string_match";
-    }
+				val argumentCount: IntRange
+					get() {
+						return IntRange.of(0)
+					}
+			}
+		)
+	}
 }

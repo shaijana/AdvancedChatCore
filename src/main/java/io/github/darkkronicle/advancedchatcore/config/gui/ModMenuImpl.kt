@@ -5,18 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.config.gui;
+package io.github.darkkronicle.advancedchatcore.config.gui
 
-import com.terraformersmc.modmenu.api.ConfigScreenFactory;
-import com.terraformersmc.modmenu.api.ModMenuApi;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.terraformersmc.modmenu.api.ConfigScreenFactory
+import com.terraformersmc.modmenu.api.ModMenuApi
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.minecraft.client.gui.screen.Screen
 
 @Environment(EnvType.CLIENT)
-public class ModMenuImpl implements ModMenuApi {
+class ModMenuImpl : ModMenuApi {
 
-    @Override
-    public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return parent -> GuiConfigHandler.getInstance().getDefaultScreen();
-    }
+	override fun getModConfigScreenFactory(): ConfigScreenFactory<*> {
+		return ConfigScreenFactory<Screen> { parent: Screen? -> GuiConfigHandler.Companion.getInstance().getDefaultScreen() }
+	}
 }

@@ -5,75 +5,77 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.config.gui;
+package io.github.darkkronicle.advancedchatcore.config.gui
 
-import fi.dy.masa.malilib.gui.button.ButtonBase;
-import fi.dy.masa.malilib.gui.button.ButtonGeneric;
-import fi.dy.masa.malilib.gui.button.IButtonActionListener;
-import io.github.darkkronicle.advancedchatcore.config.gui.widgets.WidgetToggle;
-import io.github.darkkronicle.advancedchatcore.interfaces.Translatable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import fi.dy.masa.malilib.gui.button.ButtonBase
+import fi.dy.masa.malilib.gui.button.ButtonGeneric
+import fi.dy.masa.malilib.gui.button.IButtonActionListener
+import io.github.darkkronicle.advancedchatcore.config.gui.widgets.WidgetToggle
+import io.github.darkkronicle.advancedchatcore.interfaces.Translatable
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.List
+import kotlin.collections.Map
 
-public class OnOffListListener<T extends Translatable> implements IButtonActionListener {
+class OnOffListListener<T : Translatable?>(private val button: ButtonGeneric, private val toggle: WidgetToggle, onOff: HashMap<T, Boolean>) :
+	IButtonActionListener {
 
-    private final ButtonGeneric button;
-    private final WidgetToggle toggle;
-    private T current;
-    private HashMap<T, Boolean> onOff;
-    private final List<T> order;
+	private var current: T? = null
+	private val onOff: HashMap<T?, Boolean>
+	private val order: List<T?>
 
-    public OnOffListListener(ButtonGeneric button, WidgetToggle toggle, HashMap<T, Boolean> onOff) {
-        this.button = button;
-        this.toggle = toggle;
-        this.onOff = new HashMap<>(onOff);
-        this.order = new ArrayList<>(onOff.keySet());
-        next();
-    }
+	init {
+		this.onOff = HashMap(onOff)
+		this.order = ArrayList(onOff.keys)
+		next()
+	}
 
-    public IButtonActionListener getButtonListener() {
-        return (button1, mouseButton) -> {
-            onToggled();
-        };
-    }
+	val buttonListener: IButtonActionListener
+		get() {
+			return IButtonActionListener { button1: ButtonBase?, mouseButton: Int ->
+				onToggled()
+			}
+		}
 
-    private void onToggled() {
-        onOff.put(current, toggle.isCurrentlyOn());
-    }
+	private fun onToggled() {
+		onOff.put(current, toggle.isCurrentlyOn())
+	}
 
-    private void next() {
-        int i = order.indexOf(current) + 1;
-        if (i >= order.size()) {
-            i = 0;
-        }
-        current = order.get(i);
-        button.setDisplayString(current.translate());
-        toggle.setOn(onOff.get(current));
-    }
+	private fun next() {
+		var i: Int = order.indexOf(current) + 1
+		if (i >= order.size) {
+			i = 0
+		}
+		current = order.get(i)
+		button.setDisplayString(current!!.translate())
+		toggle.setOn(onOff.get(current)!!)
+	}
 
-    public List<T> getOn() {
-        ArrayList<T> list = new ArrayList<>();
-        for (Map.Entry<T, Boolean> entry : onOff.entrySet()) {
-            if (entry.getValue()) {
-                list.add(entry.getKey());
-            }
-        }
-        return list;
-    }
+	val on: List<T?>
+		get() {
+			val list: ArrayList<T?> = ArrayList()
+			for (entry: Map.Entry<T?, Boolean> in onOff.entries) {
+				if (entry.value) {
+					list.add(entry.key)
+				}
+			}
+			return list
+		}
 
-    public static <T extends Translatable> HashMap<T, Boolean> getOnOff(
-            List<T> all, List<T> active) {
-        HashMap<T, Boolean> map = new HashMap<>();
-        for (T a : all) {
-            map.put(a, active.contains(a));
-        }
-        return map;
-    }
+	override fun actionPerformedWithButton(button: ButtonBase, mouseButton: Int) {
+		next()
+	}
 
-    @Override
-    public void actionPerformedWithButton(ButtonBase button, int mouseButton) {
-        next();
-    }
+	companion object {
+
+		fun <T : Translatable?> getOnOff(
+			all: List<T>, active: List<T>
+		): HashMap<T, Boolean> {
+			val map: HashMap<T, Boolean> = HashMap()
+			for (a: T in all) {
+				map.put(a, active.contains(a))
+			}
+			return map
+		}
+	}
 }

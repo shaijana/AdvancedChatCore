@@ -5,13 +5,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.finder;
+package io.github.darkkronicle.advancedchatcore.finder
 
-import java.util.regex.Pattern;
+import java.util.regex.Pattern
 
-public class UpperLowerFinder extends PatternFinder {
-    @Override
-    public Pattern getPattern(String toMatch) {
-        return Pattern.compile(Pattern.quote(toMatch), Pattern.CASE_INSENSITIVE);
-    }
+class UpperLowerFinder : PatternFinder() {
+
+	override fun getPattern(toMatch: String): Pattern {
+		return Pattern.compile(Pattern.quote(toMatch), Pattern.CASE_INSENSITIVE)
+	}
 }

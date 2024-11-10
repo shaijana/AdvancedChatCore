@@ -5,15 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.mixin;
+package io.github.darkkronicle.advancedchatcore.mixin
 
-import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.client.gui.hud.ChatHudLine;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Invoker;
+import net.minecraft.client.gui.hud.ChatHud
+import net.minecraft.client.gui.hud.ChatHudLine
+import org.spongepowered.asm.mixin.Mixin
+import org.spongepowered.asm.mixin.gen.Invoker
 
-@Mixin(ChatHud.class)
-public interface MixinChatHudInvoker {
-    @Invoker
-    void invokeAddVisibleMessage(ChatHudLine message);
+@Mixin(ChatHud::class)
+interface MixinChatHudInvoker {
+
+	@Invoker
+	fun invokeAddVisibleMessage(message: ChatHudLine?)
 }

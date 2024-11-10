@@ -5,24 +5,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.interfaces;
+package io.github.darkkronicle.advancedchatcore.interfaces
 
-import io.github.darkkronicle.advancedchatcore.util.StringMatch;
-import net.minecraft.text.Text;
+import io.github.darkkronicle.advancedchatcore.util.StringMatch
+import net.minecraft.text.Text
 
-import java.util.List;
+interface IFinder {
 
-public interface IFinder {
+	fun isMatch(input: String, toMatch: String): Boolean
 
-    boolean isMatch(String input, String toMatch);
+	fun isMatch(input: Text, toMatch: String): Boolean {
+		return isMatch(input.getString(), toMatch)
+	}
 
-    default boolean isMatch(Text input, String toMatch) {
-        return isMatch(input.getString(), toMatch);
-    }
+	fun getMatches(input: String, toMatch: String): List<StringMatch?>
 
-    List<StringMatch> getMatches(String input, String toMatch);
-
-    default List<StringMatch> getMatches(Text input, String toMatch) {
-        return getMatches(input.getString(), toMatch);
-    }
+	fun getMatches(input: Text, toMatch: String): List<StringMatch?> {
+		return getMatches(input.getString(), toMatch)
+	}
 }

@@ -5,53 +5,40 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.gui;
+package io.github.darkkronicle.advancedchatcore.gui
 
-import fi.dy.masa.malilib.gui.widgets.WidgetListBase;
-import fi.dy.masa.malilib.gui.widgets.WidgetListEntryBase;
-import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfig;
-import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler;
-import java.util.List;
+import fi.dy.masa.malilib.gui.widgets.WidgetListBase
+import fi.dy.masa.malilib.gui.widgets.WidgetListEntryBase
+import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfig
+import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler
 
-/** GUI list base to work in a configuration screen */
-public abstract class ConfigGuiListBase<
-                TYPE,
-                WIDGET extends WidgetListEntryBase<TYPE>,
-                WIDGETLIST extends WidgetListBase<TYPE, WIDGET>>
-        extends CoreGuiListBase<TYPE, WIDGET, WIDGETLIST> {
+/** GUI list base to work in a configuration screen  */
+abstract class ConfigGuiListBase<TYPE, WIDGET : WidgetListEntryBase<TYPE>?, WIDGETLIST : WidgetListBase<TYPE, WIDGET>?>
+@kotlin.jvm.JvmOverloads constructor(listX: Int = 10, listY: Int = 60, tabButtons: List<GuiConfigHandler.TabButton?>? = null) :
+	CoreGuiListBase<TYPE, WIDGET, WIDGETLIST>(listX, listY) {
 
-    public ConfigGuiListBase(List<GuiConfigHandler.TabButton> tabButtons) {
-        this(10, 60, tabButtons);
-    }
+	constructor(tabButtons: List<GuiConfigHandler.TabButton?>?) : this(10, 60, tabButtons)
 
-    public ConfigGuiListBase() {
-        this(10, 60, null);
-    }
+	override fun initGui() {
+		super.initGui()
 
-    public ConfigGuiListBase(int listX, int listY, List<GuiConfigHandler.TabButton> tabButtons) {
-        super(listX, listY);
-    }
+		val x = 10
+		var y = 26
 
-    @Override
-    public void initGui() {
-        super.initGui();
+		y += (22 * GuiConfig.Companion.addTabButtons(this, 10, y))
+		if (GuiConfig.Companion.TAB.getChildren() != null && GuiConfig.Companion.TAB.getChildren().size > 0) {
+			y += (22 * GuiConfig.Companion.addAllChildrenButtons(this,
+				GuiConfig.Companion.TAB!!, 10, y))
+		}
+		this.setListPosition(this.listX, y)
+		this.reCreateListWidget()
+		this.listWidget!!.refreshEntries()
 
-        int x = 10;
-        int y = 26;
+		y += 24
 
-        y += (22 * GuiConfig.addTabButtons(this, 10, y));
-        if (GuiConfig.TAB.getChildren() != null && GuiConfig.TAB.getChildren().size() > 0) {
-            y += (22 * GuiConfig.addAllChildrenButtons(this, GuiConfig.TAB, 10, y));
-        }
-        this.setListPosition(this.getListX(), y);
-        this.reCreateListWidget();
-        this.getListWidget().refreshEntries();
+		initGuiConfig(x, y)
+	}
 
-        y += 24;
-
-        initGuiConfig(x, y);
-    }
-
-    /** Method when the GUI is initialized. This one takes an X,Y that is away from the buttons */
-    public void initGuiConfig(int x, int y) {}
+	/** Method when the GUI is initialized. This one takes an X,Y that is away from the buttons  */
+	fun initGuiConfig(x: Int, y: Int) {}
 }

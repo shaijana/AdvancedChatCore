@@ -1,73 +1,56 @@
-package io.github.darkkronicle.advancedchatcore.config.gui;
+package io.github.darkkronicle.advancedchatcore.config.gui
 
-import fi.dy.masa.malilib.config.IConfigBase;
-import fi.dy.masa.malilib.util.StringUtils;
-import lombok.Getter;
-import lombok.Setter;
-import net.minecraft.client.gui.screen.Screen;
+import fi.dy.masa.malilib.config.IConfigBase
+import fi.dy.masa.malilib.util.StringUtils
+import lombok.Getter
+import lombok.Setter
+import net.minecraft.client.gui.screen.Screen
+import java.util.*
 
-import java.util.ArrayList;
-import java.util.List;
+open class TabSupplier(@field:Getter private val name: String?, private val translationKey: String?) {
 
-public class TabSupplier {
+	@Getter
+	@Setter
+	private var nestedSelection: TabSupplier? = null
 
-    @Getter
-    private final String name;
+	@Getter
+	private val children: MutableList<TabSupplier> = ArrayList()
 
-    private final String translationKey;
+	val displayName: String
+		get() = StringUtils.translate(translationKey)
 
-    @Getter
-    @Setter
-    private TabSupplier nestedSelection = null;
+	open val options: List<IConfigBase?>?
+		get() = null
 
-    @Getter
-    private List<TabSupplier> children = new ArrayList<>();
+	open fun getScreen(parent: Screen?): Screen? {
+		return null
+	}
 
-    public TabSupplier(String name, String translationKey) {
-        this.name = name;
-        this.translationKey = translationKey;
-    }
+	val isSelectable: Boolean
+		get() = true
 
-    public String getDisplayName() {
-        return StringUtils.translate(translationKey);
-    }
+	override fun equals(obj: Any?): Boolean {
+		if (obj !is TabSupplier) {
+			return false
+		}
+		return (obj.getName() == getName())
+	}
 
-    public List<IConfigBase> getOptions() {
-        return null;
-    }
+	fun addChild(supplier: TabSupplier) {
+		if (nestedSelection == null) {
+			if (supplier.isSelectable) {
+				nestedSelection = supplier
+			}
+		}
+		children.add(supplier)
+	}
 
-    public Screen getScreen(Screen parent) {
-        return null;
-    }
-
-    public boolean isSelectable() {
-        return true;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof TabSupplier)) {
-            return false;
-        }
-        return (((TabSupplier) obj).getName().equals(getName()));
-    }
-
-    public void addChild(TabSupplier supplier) {
-        if (nestedSelection == null) {
-            if (supplier.isSelectable()) {
-                nestedSelection = supplier;
-            }
-        }
-        this.children.add(supplier);
-    }
-
-    public TabSupplier get(String name) {
-        for (TabSupplier child : children) {
-            if (name.equals(child.getName())) {
-                return child;
-            }
-        }
-        return null;
-    }
-
+	fun get(name: String): TabSupplier? {
+		for (child in children) {
+			if (name == child.getName()) {
+				return child
+			}
+		}
+		return null
+	}
 }

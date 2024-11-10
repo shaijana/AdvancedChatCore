@@ -5,94 +5,89 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore;
+package io.github.darkkronicle.advancedchatcore
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import fi.dy.masa.malilib.interfaces.IInitializationHandler
+import lombok.AllArgsConstructor
+import lombok.Getter
+import lombok.Value
+import net.fabricmc.loader.api.FabricLoader
+import net.fabricmc.loader.api.ModContainer
+import net.fabricmc.loader.api.metadata.CustomValue
+import java.util.*
 
-import fi.dy.masa.malilib.interfaces.IInitializationHandler;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Value;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
-import net.fabricmc.loader.api.metadata.CustomValue;
+class ModuleHandler private constructor() {
 
-public class ModuleHandler {
+	@Getter
+	private val modules: MutableList<Module> = ArrayList()
 
-    private static final ModuleHandler INSTANCE = new ModuleHandler();
+	private var toLoad: MutableList<LoadOrder>? = ArrayList()
 
-    @Getter private final List<Module> modules = new ArrayList<>();
+	fun registerModules() {
+		modules.clear()
+		for (mod: ModContainer in FabricLoader.getInstance().getAllMods()) {
+			// Check if in "custom" it has "acmodule": true
+			val acData: CustomValue? = mod.getMetadata().getCustomValue("acmodule")
+			if (acData == null) {
+				continue
+			}
+			if (acData.getType() == CustomValue.CvType.BOOLEAN && acData.getAsBoolean()) {
+				// Add the module
+				modules.add(Module(mod.getMetadata().getId(), mod.getMetadata().getAuthors()))
+			}
+		}
+	}
 
-    private ModuleHandler() {}
+	fun registerInitHandler(name: String, priority: Int, handler: IInitializationHandler) {
+		toLoad!!.add(LoadOrder(name, priority, handler))
+	}
 
-    private List<LoadOrder> toLoad = new ArrayList<>();
+	/** Do not call  */
+	fun load() {
+		Collections.sort(toLoad)
+		for (load: LoadOrder in toLoad!!) {
+			load.getHandler().registerModHandlers()
+		}
+		toLoad = null
+	}
 
-    public static ModuleHandler getInstance() {
-        return INSTANCE;
-    }
+	/**
+	 * Retrieves a [Module] based off of a mod ID.
+	 *
+	 *
+	 * This is useful for incompatible features or enabling others.
+	 *
+	 * @param modID Mod id of the mod
+	 * @return An optional containing the module if found.
+	 */
+	fun fromId(modID: String): Optional<Module> {
+		for (m: Module in modules) {
+			if (m.getModId() == modID) {
+				return Optional.of(m)
+			}
+		}
+		return Optional.empty()
+	}
 
-    public void registerModules() {
-        modules.clear();
-        for (ModContainer mod : FabricLoader.getInstance().getAllMods()) {
-            // Check if in "custom" it has "acmodule": true
-            CustomValue acData = mod.getMetadata().getCustomValue("acmodule");
-            if (acData == null) {
-                continue;
-            }
-            if (acData.getType() == CustomValue.CvType.BOOLEAN && acData.getAsBoolean()) {
-                // Add the module
-                modules.add(new Module(mod.getMetadata().getId(), mod.getMetadata().getAuthors()));
-            }
-        }
-    }
+	@AllArgsConstructor
+	@Value
+	class LoadOrder : Comparable<LoadOrder> {
 
-    public void registerInitHandler(String name, int priority, IInitializationHandler handler) {
-        toLoad.add(new LoadOrder(name, priority, handler));
-    }
+		var name: String? = null
+		var order: Int? = null
+		var handler: IInitializationHandler? = null
 
-    /** Do not call */
-    public void load() {
-        Collections.sort(toLoad);
-        for (LoadOrder load : toLoad) {
-            load.getHandler().registerModHandlers();
-        }
-        toLoad = null;
-    }
+		override fun compareTo(o: LoadOrder): Int {
+			val compared: Int = order!!.compareTo(o.order!!)
+			if (compared == 0) {
+				return name!!.compareTo(o.getName())
+			}
+			return compared
+		}
+	}
 
-    /**
-     * Retrieves a {@link Module} based off of a mod ID.
-     *
-     * <p>This is useful for incompatible features or enabling others.
-     *
-     * @param modID Mod id of the mod
-     * @return An optional containing the module if found.
-     */
-    public Optional<Module> fromId(String modID) {
-        for (Module m : modules) {
-            if (m.getModId().equals(modID)) {
-                return Optional.of(m);
-            }
-        }
-        return Optional.empty();
-    }
+	companion object {
 
-    @AllArgsConstructor
-    @Value
-    public static class LoadOrder implements Comparable<LoadOrder> {
-        String name;
-        Integer order;
-        IInitializationHandler handler;
-
-        @Override
-        public int compareTo(ModuleHandler.LoadOrder o) {
-            int compared = order.compareTo(o.order);
-            if (compared == 0) {
-                return name.compareTo(o.getName());
-            }
-            return compared;
-        }
-    }
+		val instance: ModuleHandler = ModuleHandler()
+	}
 }

@@ -5,255 +5,248 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.config.gui;
+package io.github.darkkronicle.advancedchatcore.config.gui
 
-import fi.dy.masa.malilib.config.IConfigBase;
-import fi.dy.masa.malilib.gui.button.ButtonGeneric;
-import fi.dy.masa.malilib.util.StringUtils;
-import io.github.darkkronicle.advancedchatcore.config.SaveableConfig;
-import io.github.darkkronicle.advancedchatcore.gui.buttons.ConfigTabsButtonListener;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Value;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
+import fi.dy.masa.malilib.config.IConfigBase
+import fi.dy.masa.malilib.gui.button.ButtonGeneric
+import fi.dy.masa.malilib.util.StringUtils
+import io.github.darkkronicle.advancedchatcore.config.SaveableConfig
+import io.github.darkkronicle.advancedchatcore.gui.buttons.ConfigTabsButtonListener
+import lombok.AllArgsConstructor
+import lombok.Getter
+import lombok.Value
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gui.screen.Screen
+import java.util.*
+import java.util.function.Function
+import java.util.function.Supplier
 
 @Environment(EnvType.CLIENT)
-public class GuiConfigHandler {
+class GuiConfigHandler private constructor() {
 
-    private static final GuiConfigHandler INSTANCE = new GuiConfigHandler();
+	@Deprecated("")
+	var activeTab: String? = ""
 
-    @Deprecated
-    public String activeTab = "";
+	@Getter
+	private val tabs: MutableList<TabSupplier> = ArrayList()
 
-    @Getter private final List<TabSupplier> tabs = new ArrayList<>();
+	@Deprecated("")
+	fun isTabActive(button: Tab): Boolean {
+		return button.name == activeTab
+	}
 
-    private GuiConfigHandler() {}
+	@Deprecated("")
+	fun addGuiSection(section: Tab) {
+		if (section is GuiConfigSection) {
+			addTab(object : TabSupplier(
+				section.name, StringUtils.translate(section.name)) {
+				override val options: List<IConfigBase?>?
+					get() = section.options
+			})
+			return
+		}
+		tabs.add(object : TabSupplier(section.name, section.name) {
+			override fun getScreen(parent: Screen?): Screen? {
+				return section.getScreen(this.buttons)
+			}
+		})
+	}
 
-    @Deprecated
-    public boolean isTabActive(GuiConfigHandler.Tab button) {
-        return button.getName().equals(activeTab);
-    }
+	fun addTab(tab: TabSupplier) {
+		tabs.add(tab)
+	}
 
-    public static GuiConfigHandler getInstance() {
-        return INSTANCE;
-    }
+	fun get(name: String): TabSupplier? {
+		for (child: TabSupplier in tabs) {
+			if (child.name == name) {
+				return child
+			}
+		}
+		return null
+	}
 
-    @Deprecated
-    public void addGuiSection(Tab section) {
-        if (section instanceof GuiConfigSection gui) {
-            addTab(new TabSupplier(section.getName(), StringUtils.translate(section.getName())) {
-                @Override
-                public List<IConfigBase> getOptions() {
-                    return gui.getOptions();
-                }
-            });
-            return;
-        }
-        tabs.add(new TabSupplier(section.getName(), section.getName()) {
-            @Override
-            public Screen getScreen(Screen parent) {
-                return section.getScreen(getButtons());
-            }
-        });
-    }
+	@get:Deprecated("")
+	val buttons: List<TabButton?>
+		get() {
+			var x: Int = 10
+			var y: Int = 26
+			var rows: Int = 1
+			val buttons: ArrayList<TabButton?> =
+				ArrayList()
+			val client: MinecraftClient = MinecraftClient.getInstance()
+			val windowWidth: Int = client.window.scaledWidth
+			for (tab: TabSupplier in tabs) {
+				val width: Int = client.textRenderer.getWidth(tab.name) + 10
 
-    public void addTab(TabSupplier tab) {
-        tabs.add(tab);
-    }
+				if (x >= windowWidth - width - 10) {
+					x = 10
+					y += 22
+					rows++
+				}
 
-    public TabSupplier get(String name) {
-        for (TabSupplier child : tabs) {
-            if (child.getName().equals(name)) {
-                return child;
-            }
-        }
-        return null;
-    }
+				val button: ButtonGeneric = this.createButton(x, y, width, tab)
+				x += button.width + 2
+				buttons.add(TabButton(tab, button))
+			}
+			return buttons
+		}
 
-    @Deprecated
-    public List<TabButton> getButtons() {
-        int x = 10;
-        int y = 26;
-        int rows = 1;
-        ArrayList<TabButton> buttons = new ArrayList<>();
-        MinecraftClient client = MinecraftClient.getInstance();
-        int windowWidth = client.getWindow().getScaledWidth();
-        for (TabSupplier tab : tabs) {
-            int width = client.textRenderer.getWidth(tab.getName()) + 10;
+	private fun createButton(x: Int, y: Int, width: Int, tab: TabSupplier): ButtonGeneric {
+		val button: ButtonGeneric = ButtonGeneric(x, y, width, 20, tab.name)
+		button.setEnabled(GuiConfig.Companion.TAB != tab)
+		return button
+	}
 
-            if (x >= windowWidth - width - 10) {
-                x = 10;
-                y += 22;
-                rows++;
-            }
+	fun getTab(name: String): Tab {
+		val supplier: TabSupplier? = getTabSupplier(name)
+		return object : Tab {
+			override val name: String?
+				get() = supplier.getDisplayName()
 
-            ButtonGeneric button = this.createButton(x, y, width, tab);
-            x += button.getWidth() + 2;
-            buttons.add(new TabButton(tab, button));
-        }
-        return buttons;
-    }
+			override fun getScreen(buttons: List<TabButton?>?): Screen {
+				return this.defaultScreen
+			}
+		}
+	}
 
-    private ButtonGeneric createButton(int x, int y, int width, TabSupplier tab) {
-        ButtonGeneric button = new ButtonGeneric(x, y, width, 20, tab.getName());
-        button.setEnabled(!GuiConfig.TAB.equals(tab));
-        return button;
-    }
+	fun getTabSupplier(name: String): TabSupplier? {
+		for (b: TabSupplier in tabs) {
+			if (b.name == name) {
+				return b
+			}
+		}
+		return null
+	}
 
-    public Tab getTab(String name) {
-        TabSupplier supplier = getTabSupplier(name);
-        return new Tab() {
-            @Override
-            public String getName() {
-                return supplier.getDisplayName();
-            }
+	val defaultScreen: Screen
+		get() = GuiConfig()
 
-            @Override
-            public Screen getScreen(List<TabButton> buttons) {
-                return getDefaultScreen();
-            }
-        };
-    }
+	@Deprecated("")
+	@AllArgsConstructor
+	@Value
+	class TabButton {
 
-    public TabSupplier getTabSupplier(String name) {
-        for (TabSupplier b : tabs) {
-            if (b.getName().equals(name)) {
-                return b;
-            }
-        }
-        return null;
-    }
+		var tabSupplier: TabSupplier? = null
+		var button: ButtonGeneric? = null
 
-    public Screen getDefaultScreen() {
-        return new GuiConfig();
-    }
+		@get:Deprecated("")
+		val tab: Tab
+			get() = object : Tab {
+				override val name: String?
+					get() = tabSupplier.getDisplayName()
 
-    @Deprecated
-    public static GuiConfigSection createGuiConfigSection(String name, List<SaveableConfig<? extends IConfigBase>> configs) {
-        List<IConfigBase> configBases = new ArrayList<>();
-        for (SaveableConfig<? extends IConfigBase> saveable : configs) {
-            configBases.add(saveable.config);
-        }
-        return new GuiConfigSection() {
-            @Override
-            public List<IConfigBase> getOptions() {
-                return configBases;
-            }
+				override fun getScreen(
+					buttons: List<TabButton?>?
+				): Screen {
+					return GuiConfig()
+				}
+			}
 
-            @Override
-            public String getName() {
-                return StringUtils.translate(name);
-            }
-        };
-    }
+		fun createListener(): ConfigTabsButtonListener {
+			return ConfigTabsButtonListener(this)
+		}
+	}
 
-    @Deprecated
-    @AllArgsConstructor
-    @Value
-    public static class TabButton {
-        TabSupplier tabSupplier;
-        ButtonGeneric button;
+	@Deprecated("")
+	interface Tab {
 
-        @Deprecated
-        public Tab getTab() {
-            return new Tab() {
-                @Override
-                public String getName() {
-                    return tabSupplier.getDisplayName();
-                }
+		val name: String?
 
-                @Override
-                public Screen getScreen(List<TabButton> buttons) {
-                    return new GuiConfig();
-                }
-            };
-        }
+		fun getScreen(buttons: List<TabButton?>?): Screen
+	}
 
-        public ConfigTabsButtonListener createListener() {
-            return new ConfigTabsButtonListener(this);
-        }
-    }
+	@Deprecated("")
+	interface GuiConfigSection : Tab {
 
-    public static TabSupplier wrapSaveableOptions(String name, String translationKey, Supplier<List<SaveableConfig<? extends IConfigBase>>> supplier) {
-        Supplier<List<IConfigBase>> configSupplier = () -> {
-            List<IConfigBase> config = new ArrayList<>();
-            List<SaveableConfig<? extends IConfigBase>> options = supplier.get();
-            for (SaveableConfig<? extends IConfigBase> s : options) {
-                config.add(s.config);
-            }
-            return config;
-        };
-        return wrapOptions(name, translationKey, configSupplier);
-    }
+		val options: List<IConfigBase?>?
 
-    public static TabSupplier wrapSaveableOptions(String name, String translationKey, List<SaveableConfig<? extends IConfigBase>> options) {
-        List<IConfigBase> config = new ArrayList<>();
-        for (SaveableConfig<? extends IConfigBase> s : options) {
-            config.add(s.config);
-        }
-        return wrapOptions(name, translationKey, config);
-    }
+		override val name: String?
 
-    public static TabSupplier wrapOptions(String name, String translationKey, List<IConfigBase> configs) {
-        return wrapOptions(name, translationKey, () -> configs);
-    }
+		override fun getScreen(buttons: List<TabButton?>?): Screen {
+			instance.activeTab = this.name
+			return GuiConfig()
+		}
+	}
 
-    public static TabSupplier wrapOptions(String name, String translationKey, Supplier<List<IConfigBase>> options) {
-        return new TabSupplier(name, translationKey) {
-            @Override
-            public List<IConfigBase> getOptions() {
-                return options.get();
-            }
-        };
-    }
+	companion object {
 
-    public static TabSupplier wrapScreen(String name, String translationKey, Function<Screen, Screen> screenSupplier) {
-        return new TabSupplier(name, translationKey) {
-            @Override
-            public Screen getScreen(Screen parent) {
-                return screenSupplier.apply(parent);
-            }
-        };
-    }
+		val instance: GuiConfigHandler = GuiConfigHandler()
 
-    public static TabSupplier children(String name, String translationKey, TabSupplier... children) {
-        TabSupplier tab = new TabSupplier(name, translationKey) {
-            @Override
-            public String getName() {
-                return super.getName();
-            }
-        };
-        for (TabSupplier child : children) {
-            tab.addChild(child);
-        }
-        return tab;
-    }
+		@Deprecated("")
+		fun createGuiConfigSection(name: String?, configs: List<SaveableConfig<out IConfigBase?>>): GuiConfigSection {
+			val configBases: MutableList<IConfigBase?> = ArrayList()
+			for (saveable: SaveableConfig<out IConfigBase?> in configs) {
+				configBases.add(saveable.config)
+			}
+			return object : GuiConfigSection {
+				override val options: List<IConfigBase?>?
+					get() {
+						return configBases
+					}
 
-    @Deprecated
-    public interface Tab {
-        String getName();
+				override val name: String?
+					get() {
+						return StringUtils.translate(name)
+					}
+			}
+		}
 
-        Screen getScreen(List<TabButton> buttons);
-    }
+		fun wrapSaveableOptions(name: String?, translationKey: String?, supplier: Supplier<List<SaveableConfig<out IConfigBase?>>>): TabSupplier {
+			val configSupplier: Supplier<List<IConfigBase?>> =
+				Supplier {
+					val config: MutableList<IConfigBase?> = ArrayList()
+					val options: List<SaveableConfig<out IConfigBase?>> = supplier.get()
+					for (s: SaveableConfig<out IConfigBase?> in options) {
+						config.add(s.config)
+					}
+					config
+				}
+			return wrapOptions(name, translationKey, configSupplier)
+		}
 
-    @Deprecated
-    public interface GuiConfigSection extends Tab {
-        List<IConfigBase> getOptions();
+		fun wrapSaveableOptions(name: String?, translationKey: String?, options: List<SaveableConfig<out IConfigBase?>>): TabSupplier {
+			val config: MutableList<IConfigBase?> = ArrayList()
+			for (s: SaveableConfig<out IConfigBase?> in options) {
+				config.add(s.config)
+			}
+			return wrapOptions(name, translationKey, config)
+		}
 
-        String getName();
+		fun wrapOptions(name: String?, translationKey: String?, configs: List<IConfigBase?>): TabSupplier {
+			return wrapOptions(name, translationKey,
+				{ configs })
+		}
 
-        @Override
-        default Screen getScreen(List<TabButton> buttons) {
-            GuiConfigHandler.getInstance().activeTab = this.getName();
-            return new GuiConfig();
-        }
-    }
+		fun wrapOptions(name: String?, translationKey: String?, options: Supplier<List<IConfigBase?>>): TabSupplier {
+			return object : TabSupplier(name, translationKey) {
+				override val options: List<IConfigBase?>?
+					get() {
+						return options.get()
+					}
+			}
+		}
+
+		fun wrapScreen(name: String?, translationKey: String?, screenSupplier: Function<Screen?, Screen?>): TabSupplier {
+			return object : TabSupplier(name, translationKey) {
+				override fun getScreen(parent: Screen?): Screen? {
+					return screenSupplier.apply(parent)
+				}
+			}
+		}
+
+		fun children(name: String?, translationKey: String?, vararg children: TabSupplier): TabSupplier {
+			val tab: TabSupplier = object : TabSupplier(name, translationKey) {
+				val name: String
+					get() {
+						return super.getName()
+					}
+			}
+			for (child: TabSupplier in children) {
+				tab.addChild(child)
+			}
+			return tab
+		}
+	}
 }

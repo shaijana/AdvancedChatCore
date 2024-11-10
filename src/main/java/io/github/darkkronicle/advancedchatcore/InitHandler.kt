@@ -5,158 +5,180 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore;
+package io.github.darkkronicle.advancedchatcore
 
-import fi.dy.masa.malilib.config.ConfigManager;
-import fi.dy.masa.malilib.config.IConfigBase;
-import fi.dy.masa.malilib.config.options.ConfigHotkey;
-import fi.dy.masa.malilib.event.InputEventHandler;
-import fi.dy.masa.malilib.gui.GuiBase;
-import fi.dy.masa.malilib.interfaces.IInitializationHandler;
-import fi.dy.masa.malilib.util.InfoUtils;
-import io.github.darkkronicle.advancedchatcore.chat.*;
-import io.github.darkkronicle.advancedchatcore.config.ConfigStorage;
-import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfig;
-import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler;
-import io.github.darkkronicle.advancedchatcore.config.gui.TabSupplier;
-import io.github.darkkronicle.advancedchatcore.finder.CustomFinder;
-import io.github.darkkronicle.advancedchatcore.finder.custom.ProfanityFinder;
-import io.github.darkkronicle.advancedchatcore.hotkeys.InputHandler;
-import io.github.darkkronicle.advancedchatcore.util.ProfanityUtil;
-import io.github.darkkronicle.advancedchatcore.util.StringInsert;
-import io.github.darkkronicle.advancedchatcore.util.StringMatch;
-import io.github.darkkronicle.advancedchatcore.util.TextUtil;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
-import java.util.*;
+import fi.dy.masa.malilib.config.ConfigManager
+import fi.dy.masa.malilib.config.IConfigBase
+import fi.dy.masa.malilib.config.options.ConfigHotkey
+import fi.dy.masa.malilib.event.InputEventHandler
+import fi.dy.masa.malilib.gui.GuiBase
+import fi.dy.masa.malilib.hotkeys.IHotkeyCallback
+import fi.dy.masa.malilib.hotkeys.IKeybind
+import fi.dy.masa.malilib.hotkeys.KeyAction
+import fi.dy.masa.malilib.interfaces.IInitializationHandler
+import fi.dy.masa.malilib.util.InfoUtils
+import io.github.darkkronicle.advancedchatcore.chat.AdvancedChatScreen
+import io.github.darkkronicle.advancedchatcore.chat.ChatHistoryProcessor
+import io.github.darkkronicle.advancedchatcore.chat.ChatScreenSectionHolder
+import io.github.darkkronicle.advancedchatcore.chat.DefaultChatSuggestor
+import io.github.darkkronicle.advancedchatcore.chat.MessageDispatcher
+import io.github.darkkronicle.advancedchatcore.config.ConfigStorage
+import io.github.darkkronicle.advancedchatcore.config.SaveableConfig
+import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfig
+import io.github.darkkronicle.advancedchatcore.config.gui.GuiConfigHandler
+import io.github.darkkronicle.advancedchatcore.config.gui.TabSupplier
+import io.github.darkkronicle.advancedchatcore.finder.CustomFinder
+import io.github.darkkronicle.advancedchatcore.finder.custom.ProfanityFinder
+import io.github.darkkronicle.advancedchatcore.hotkeys.InputHandler
+import io.github.darkkronicle.advancedchatcore.interfaces.AdvancedChatScreenSection
+import io.github.darkkronicle.advancedchatcore.interfaces.IFinder
+import io.github.darkkronicle.advancedchatcore.interfaces.IMessageFilter
+import io.github.darkkronicle.advancedchatcore.util.ProfanityUtil
+import io.github.darkkronicle.advancedchatcore.util.StringInsert
+import io.github.darkkronicle.advancedchatcore.util.StringMatch
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.minecraft.client.MinecraftClient
+import net.minecraft.text.Text
+import java.util.*
+import java.util.function.Function
+import java.util.function.Supplier
 
 @Environment(EnvType.CLIENT)
-public class InitHandler implements IInitializationHandler {
+class InitHandler : IInitializationHandler {
 
-    @Override
-    public void registerModHandlers() {
-        // Setup modules
-        ModuleHandler.getInstance().registerModules();
-        ConfigManager.getInstance()
-                .registerConfigHandler(AdvancedChatCore.MOD_ID, new ConfigStorage());
-        // Setup chat history
-        MessageDispatcher.getInstance().register(new ChatHistoryProcessor(), -1);
+	override fun registerModHandlers() {
+		// Setup modules
+		ModuleHandler.Companion.getInstance().registerModules()
+		ConfigManager.getInstance()
+			.registerConfigHandler(AdvancedChatCore.Companion.MOD_ID, ConfigStorage())
+		// Setup chat history
+		MessageDispatcher.Companion.getInstance().register(ChatHistoryProcessor(), -1)
 
-        GuiConfigHandler.getInstance().addTab(
-                GuiConfigHandler.children(
-                        "advancedchatcore",
-                        "advancedchat.tab.advancedchatcore",
-                GuiConfigHandler.wrapOptions(
-                        "core_general",
-                        "advancedchatcore.tab.general",
-                        ConfigStorage.General.OPTIONS.stream().map((saveableConfig) -> (IConfigBase) saveableConfig.config).toList()
-                ),
-                GuiConfigHandler.wrapOptions(
-                        "chatscreen",
-                        "advancedchatcore.tab.chatscreen",
-                        ConfigStorage.ChatScreen.OPTIONS.stream().map((saveableConfig) -> (IConfigBase) saveableConfig.config).toList()
-                ))
-        );
+		GuiConfigHandler.Companion.getInstance().addTab(
+			GuiConfigHandler.Companion.children(
+				"advancedchatcore",
+				"advancedchat.tab.advancedchatcore",
+				GuiConfigHandler.Companion.wrapOptions(
+					"core_general",
+					"advancedchatcore.tab.general",
+					ConfigStorage.General.OPTIONS.stream().map<IConfigBase?> { saveableConfig: SaveableConfig<out IConfigBase?>? -> saveableConfig!!.config }
+						.toList()
+				),
+				GuiConfigHandler.Companion.wrapOptions(
+					"chatscreen",
+					"advancedchatcore.tab.chatscreen",
+					ConfigStorage.ChatScreen.OPTIONS.stream().map<IConfigBase?> { saveableConfig: SaveableConfig<out IConfigBase?>? -> saveableConfig!!.config }
+						.toList()
+				))
+		)
 
-        ProfanityUtil.getInstance().loadConfigs();
-        MessageDispatcher.getInstance().registerPreFilter(text -> {
-            if (ConfigStorage.General.FILTER_PROFANITY.config.getBooleanValue()) {
-                List<StringMatch> profanity =
-                        ProfanityUtil.getInstance().getBadWords(text.getString(), (float) ConfigStorage.General.PROFANITY_ABOVE.config.getDoubleValue(), ConfigStorage.General.PROFANITY_ON_WORD_BOUNDARIES.config.getBooleanValue());
-                if (profanity.size() == 0) {
-                    return Optional.empty();
-                }
-                Map<StringMatch, StringInsert> insertions =
-                        new HashMap<>();
-                for (StringMatch bad : profanity) {
-                    insertions.put(bad, (current, match) ->
-                            Text.literal("*".repeat(bad.end - bad.start)).fillStyle(current.getStyle())
-                    );
-                }
-                text = TextUtil.replaceStrings(text, insertions);
-                return Optional.of(text);
-            }
-            return Optional.empty();
-        }, -1);
+		ProfanityUtil.Companion.getInstance().loadConfigs()
+		MessageDispatcher.Companion.getInstance().registerPreFilter(IMessageFilter { text: Text ->
+			var text: Text = text
+			if (ConfigStorage.General.FILTER_PROFANITY.config.getBooleanValue()) {
+				val profanity: List<StringMatch?> =
+					ProfanityUtil.Companion.getInstance().getBadWords(text.getString(), ConfigStorage.General.PROFANITY_ABOVE.config.getDoubleValue().toFloat(),
+						ConfigStorage.General.PROFANITY_ON_WORD_BOUNDARIES.config.getBooleanValue())
+				if (profanity.size == 0) {
+					return@registerPreFilter Optional.empty<Text>()
+				}
+				val insertions: MutableMap<StringMatch?, StringInsert> =
+					HashMap()
+				for (bad: StringMatch? in profanity) {
+					insertions.put(bad, StringInsert { current: Text, match: StringMatch? ->
+						Text.literal("*".repeat(
+							bad!!.end!! - bad.start!!)).fillStyle(current.getStyle())
+					}
+					)
+				}
+				text = replaceStrings(text, insertions)
+				return@registerPreFilter Optional.of<Text>(text)
+			}
+			Optional.empty<Text?>()
+		}, -1)
 
-        // This constructs the default chat suggestor
-        ChatScreenSectionHolder.getInstance()
-                .addSectionSupplier(
-                        (advancedChatScreen -> {
-                            if (AdvancedChatCore.CREATE_SUGGESTOR) {
-                                return new DefaultChatSuggestor(advancedChatScreen);
-                            }
-                            return null;
-                        }));
+		// This constructs the default chat suggestor
+		ChatScreenSectionHolder.Companion.getInstance()
+			.addSectionSupplier(
+				(Function<AdvancedChatScreen, AdvancedChatScreenSection?> { advancedChatScreen: AdvancedChatScreen? ->
+					if (AdvancedChatCore.Companion.CREATE_SUGGESTOR) {
+						return@Function DefaultChatSuggestor(advancedChatScreen)
+					}
+					null
+				}))
 
-        CustomFinder.getInstance()
-                .register(
-                        ProfanityFinder::new,
-                        "profanity",
-                        "advancedchatcore.findtype.custom.profanity",
-                        "advancedchatcore.findtype.custom.info.profanity");
+		CustomFinder.Companion.getInstance()
+			.register(
+				Supplier<IFinder> { ProfanityFinder() },
+				"profanity",
+				"advancedchatcore.findtype.custom.profanity",
+				"advancedchatcore.findtype.custom.info.profanity")
 
-        InputHandler.getInstance().addDisplayName("core_general", "advancedchatcore.config.tab.hotkeysgeneral");
-        InputHandler.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_CHAT.config, (action, key) -> {
-            if (MinecraftClient.getInstance().world == null) {
-                return true;
-            }
-            GuiBase.openGui(new AdvancedChatScreen(""));
-            return true;
-        });
-        InputHandler.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_CHAT_WITH_LAST.config, (action, key) -> {
-            if (MinecraftClient.getInstance().world == null) {
-                return true;
-            }
-            GuiBase.openGui(new AdvancedChatScreen(0));
-            return true;
-        });
-        InputHandler.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_CHAT_FREE_MOVEMENT.config, (action, key) -> {
-            if (MinecraftClient.getInstance().world == null) {
-                return true;
-            }
-            // Manually update stuff so that movement keys are continued to be pressed
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.currentScreen != null) {
-                client.currentScreen.removed();
-            }
-            client.currentScreen = new AdvancedChatScreen(true);
-            client.mouse.unlockCursor();
-            client.currentScreen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
-            client.skipGameRender = false;;
-            client.updateWindowTitle();
-            return true;
-        });
-        InputHandler.getInstance().add("core_general", ConfigStorage.Hotkeys.TOGGLE_PERMANENT.config, (action, key) -> {
-            AdvancedChatScreen.PERMANENT_FOCUS = !AdvancedChatScreen.PERMANENT_FOCUS;
-            InfoUtils.printActionbarMessage("advancedchatcore.message.togglepermanent");
-            return true;
-        });
-        InputHandler.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_SETTINGS.config, (action, key) -> {
-            GuiBase.openGui(new GuiConfig());
-            return true;
-        });
-        ModuleHandler.getInstance().load();
-        InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
-        InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.getInstance());
-        InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.getInstance());
+		InputHandler.Companion.getInstance().addDisplayName("core_general", "advancedchatcore.config.tab.hotkeysgeneral")
+		InputHandler.Companion.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_CHAT.config,
+			IHotkeyCallback { action: KeyAction?, key: IKeybind? ->
+				if (MinecraftClient.getInstance().world == null) {
+					return@add true
+				}
+				GuiBase.openGui(AdvancedChatScreen(""))
+				true
+			})
+		InputHandler.Companion.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_CHAT_WITH_LAST.config,
+			IHotkeyCallback { action: KeyAction?, key: IKeybind? ->
+				if (MinecraftClient.getInstance().world == null) {
+					return@add true
+				}
+				GuiBase.openGui(AdvancedChatScreen(0))
+				true
+			})
+		InputHandler.Companion.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_CHAT_FREE_MOVEMENT.config,
+			IHotkeyCallback { action: KeyAction?, key: IKeybind? ->
+				if (MinecraftClient.getInstance().world == null) {
+					return@add true
+				}
+				// Manually update stuff so that movement keys are continued to be pressed
+				val client: MinecraftClient = MinecraftClient.getInstance()
+				if (client.currentScreen != null) {
+					client.currentScreen!!.removed()
+				}
+				client.currentScreen = AdvancedChatScreen(true)
+				client.mouse.unlockCursor()
+				client.currentScreen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight())
+				client.skipGameRender = false
 
-        List<TabSupplier> children = new ArrayList<>();
+				client.updateWindowTitle()
+				true
+			})
+		InputHandler.Companion.getInstance().add("core_general", ConfigStorage.Hotkeys.TOGGLE_PERMANENT.config,
+			IHotkeyCallback { action: KeyAction?, key: IKeybind? ->
+				AdvancedChatScreen.Companion.PERMANENT_FOCUS = !AdvancedChatScreen.Companion.PERMANENT_FOCUS
+				InfoUtils.printActionbarMessage("advancedchatcore.message.togglepermanent")
+				true
+			})
+		InputHandler.Companion.getInstance().add("core_general", ConfigStorage.Hotkeys.OPEN_SETTINGS.config,
+			IHotkeyCallback { action: KeyAction?, key: IKeybind? ->
+				GuiBase.openGui(GuiConfig())
+				true
+			})
+		ModuleHandler.Companion.getInstance().load()
+		InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.Companion.getInstance())
+		InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.Companion.getInstance())
+		InputEventHandler.getInputManager().registerMouseInputHandler(InputHandler.Companion.getInstance())
 
-        for (Map.Entry<String, List<ConfigHotkey>> hotkeys : InputHandler.getInstance().getHotkeys().entrySet()) {
-            List<IConfigBase> configs = hotkeys.getValue().stream().map(hotkey -> (IConfigBase) hotkey).toList();
-            children.add(GuiConfigHandler.wrapOptions(hotkeys.getKey(), InputHandler.getInstance().getDisplayName(hotkeys.getKey()), configs));
-        }
+		val children: MutableList<TabSupplier> = ArrayList()
 
-        GuiConfigHandler.getInstance().addTab(
-                GuiConfigHandler.children(
-                        "hotkeys",
-                        "advancedchat.tab.hotkeys",
-                        children.toArray(new TabSupplier[0])
-                )
-        );
-    }
+		for (hotkeys: Map.Entry<String, List<ConfigHotkey?>> in InputHandler.Companion.getInstance().getHotkeys().entries) {
+			val configs: List<IConfigBase?> = hotkeys.value.stream().map { hotkey: ConfigHotkey? -> hotkey }.toList()
+			children.add(GuiConfigHandler.Companion.wrapOptions(hotkeys.key, InputHandler.Companion.getInstance().getDisplayName(hotkeys.key), configs))
+		}
+
+		GuiConfigHandler.Companion.getInstance().addTab(
+			GuiConfigHandler.Companion.children(
+				"hotkeys",
+				"advancedchat.tab.hotkeys",
+				*children.toTypedArray<TabSupplier>()
+			)
+		)
+	}
 }

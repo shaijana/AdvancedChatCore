@@ -5,36 +5,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.config.gui.widgets;
+package io.github.darkkronicle.advancedchatcore.config.gui.widgets
 
-import fi.dy.masa.malilib.gui.button.ButtonOnOff;
-import lombok.Getter;
+import fi.dy.masa.malilib.gui.button.ButtonOnOff
+import lombok.Getter
 
-public class WidgetToggle extends ButtonOnOff {
+class WidgetToggle(
+	x: Int,
+	y: Int,
+	width: Int,
+	rightAlign: Boolean,
+	translationKey: String?,
+	@field:Getter private var currentlyOn: Boolean,
+	vararg hoverStrings: String?
+) : ButtonOnOff(x, y, width, rightAlign, translationKey, currentlyOn, *hoverStrings) {
 
-    @Getter private boolean currentlyOn;
+	override fun onMouseClickedImpl(mouseX: Int, mouseY: Int, mouseButton: Int): Boolean {
+		this.currentlyOn = !this.currentlyOn
+		this.updateDisplayString(this.currentlyOn)
+		return super.onMouseClickedImpl(mouseX, mouseY, mouseButton)
+	}
 
-    public WidgetToggle(
-            int x,
-            int y,
-            int width,
-            boolean rightAlign,
-            String translationKey,
-            boolean isCurrentlyOn,
-            String... hoverStrings) {
-        super(x, y, width, rightAlign, translationKey, isCurrentlyOn, hoverStrings);
-        this.currentlyOn = isCurrentlyOn;
-    }
-
-    @Override
-    protected boolean onMouseClickedImpl(int mouseX, int mouseY, int mouseButton) {
-        this.currentlyOn = !this.currentlyOn;
-        this.updateDisplayString(this.currentlyOn);
-        return super.onMouseClickedImpl(mouseX, mouseY, mouseButton);
-    }
-
-    public void setOn(boolean on) {
-        this.currentlyOn = on;
-        this.updateDisplayString(on);
-    }
+	fun setOn(on: Boolean) {
+		this.currentlyOn = on
+		this.updateDisplayString(on)
+	}
 }

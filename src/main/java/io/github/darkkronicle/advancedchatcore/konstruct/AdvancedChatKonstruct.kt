@@ -1,119 +1,108 @@
-package io.github.darkkronicle.advancedchatcore.konstruct;
+package io.github.darkkronicle.advancedchatcore.konstruct
 
-import io.github.darkkronicle.Konstruct.functions.Function;
-import io.github.darkkronicle.Konstruct.functions.NamedFunction;
-import io.github.darkkronicle.Konstruct.functions.Variable;
-import io.github.darkkronicle.Konstruct.nodes.Node;
-import io.github.darkkronicle.Konstruct.parser.*;
-import io.github.darkkronicle.Konstruct.reader.builder.NodeBuilder;
-import io.github.darkkronicle.Konstruct.type.IntegerObject;
-import io.github.darkkronicle.Konstruct.type.StringObject;
-import io.github.darkkronicle.addons.*;
-import io.github.darkkronicle.advancedchatcore.AdvancedChatCore;
-import io.github.darkkronicle.advancedchatcore.util.Color;
-import io.github.darkkronicle.advancedchatcore.util.Colors;
-import io.github.darkkronicle.advancedchatcore.util.TextUtil;
-import lombok.Getter;
-import net.minecraft.util.Util;
+import io.github.darkkronicle.Konstruct.functions.NamedFunction
+import io.github.darkkronicle.Konstruct.functions.Variable
+import io.github.darkkronicle.Konstruct.nodes.Node
+import io.github.darkkronicle.Konstruct.reader.builder.NodeBuilder
+import io.github.darkkronicle.Konstruct.type.IntegerObject
+import io.github.darkkronicle.Konstruct.type.StringObject
+import io.github.darkkronicle.advancedchatcore.AdvancedChatCore
+import io.github.darkkronicle.advancedchatcore.util.Color
+import io.github.darkkronicle.advancedchatcore.util.Colors
+import lombok.Getter
+import net.minecraft.util.Util
 
-import java.util.List;
+class AdvancedChatKonstruct private constructor() {
 
-public class AdvancedChatKonstruct {
+	@Getter
+	private var processor: NodeProcessor? = null
 
-    private static final AdvancedChatKonstruct INSTANCE = new AdvancedChatKonstruct();
+	init {
+		reset()
+		addFunction(CalculatorFunction())
+		addFunction(RandomFunction())
+		addFunction(ReplaceFunction())
+		addFunction(RoundFunction())
+		addFunction(OwOFunction())
+		addFunction(RomanNumeralFunction())
+		addFunction(IsMatchFunction())
+		addFunction(TimeFunction())
+		addVariable("server", Variable { StringObject(AdvancedChatCore.Companion.getServer()) })
+		addFunction("randomString", object : Function() {
+			override fun parse(context: ParseContext?, input: List<Node?>?): Result {
+				return Result.success(AdvancedChatCore.Companion.getRandomString())
+			}
 
-    public static AdvancedChatKonstruct getInstance() {
-        return INSTANCE;
-    }
+			val argumentCount: IntRange
+				get() {
+					return IntRange.none()
+				}
+		})
+		addFunction("getColor", object : Function() {
+			override fun parse(context: ParseContext?, input: List<Node?>?): Result {
+				val res: Result = Function.parseArgument(context, input, 0)
+				if (Function.shouldReturn(res)) return res
+				val color: Color = Colors.Companion.getInstance().getColorOrWhite(res.getContent().getString())
+				return Result.success(color.getString())
+			}
 
-    @Getter
-    private NodeProcessor processor;
+			val argumentCount: IntRange
+				get() {
+					return IntRange.of(1)
+				}
+		})
+		addFunction("superscript", object : Function() {
+			override fun parse(context: ParseContext?, input: List<Node?>?): Result {
+				val number: Int
+				try {
+					val res: Result = Function.parseArgument(context, input, 0)
+					if (Function.shouldReturn(res)) return res
+					number = res.getContent().getString().strip().toInt()
+				} catch (e: NumberFormatException) {
+					return Result.success("NaN")
+				}
+				return Result.success(toSuperscript(number))
+			}
 
-    private AdvancedChatKonstruct() {
-        reset();
-        addFunction(new CalculatorFunction());
-        addFunction(new RandomFunction());
-        addFunction(new ReplaceFunction());
-        addFunction(new RoundFunction());
-        addFunction(new OwOFunction());
-        addFunction(new RomanNumeralFunction());
-        addFunction(new IsMatchFunction());
-        addFunction(new TimeFunction());
-        addVariable("server", () -> new StringObject(AdvancedChatCore.getServer()));
-        addFunction("randomString", new Function() {
-            @Override
-            public Result parse(ParseContext context, List<Node> input) {
-                return Result.success(AdvancedChatCore.getRandomString());
-            }
+			val argumentCount: IntRange
+				get() {
+					return IntRange.of(1)
+				}
+		})
+		addVariable("ms", Variable { IntegerObject(Util.getMeasuringTimeMs().toInt()) })
+	}
 
-            @Override
-            public IntRange getArgumentCount() {
-                return IntRange.none();
-            }
-        });
-        addFunction("getColor", new Function() {
-            @Override
-            public Result parse(ParseContext context, List<Node> input) {
-                Result res = Function.parseArgument(context, input, 0);
-                if (Function.shouldReturn(res)) return res;
-                Color color = Colors.getInstance().getColorOrWhite(res.getContent().getString());
-                return Result.success(color.getString());
-            }
+	fun parse(node: Node?): ParseResult {
+		return processor.parse(node)
+	}
 
-            @Override
-            public IntRange getArgumentCount() {
-                return IntRange.of(1);
-            }
-        });
-        addFunction("superscript", new Function() {
-            @Override
-            public Result parse(ParseContext context, List<Node> input) {
-                int number;
-                try {
-                    Result res = Function.parseArgument(context, input, 0);
-                    if (Function.shouldReturn(res)) return res;
-                    number = Integer.parseInt(res.getContent().getString().strip());
-                } catch (NumberFormatException e) {
-                    return Result.success("NaN");
-                }
-                return Result.success(TextUtil.toSuperscript(number));
-            }
+	fun getNode(string: String?): Node {
+		return NodeBuilder(string).build()
+	}
 
-            @Override
-            public IntRange getArgumentCount() {
-                return IntRange.of(1);
-            }
-        });
-        addVariable("ms", () -> new IntegerObject((int) Util.getMeasuringTimeMs()));
-    }
+	fun copy(): NodeProcessor {
+		return processor.copy()
+	}
 
-    public ParseResult parse(Node node) {
-        return processor.parse(node);
-    }
+	/** Not really recommended to call...  */
+	fun reset() {
+		this.processor = NodeProcessor()
+	}
 
-    public Node getNode(String string) {
-        return new NodeBuilder(string).build();
-    }
+	fun addVariable(key: String?, variable: Variable?) {
+		processor.addVariable(key, variable)
+	}
 
-    public NodeProcessor copy() {
-        return processor.copy();
-    }
+	fun addFunction(function: NamedFunction?) {
+		processor.addFunction(function)
+	}
 
-    /** Not really recommended to call... */
-    public void reset() {
-        this.processor = new NodeProcessor();
-    }
+	fun addFunction(key: String?, function: Function?) {
+		processor.addFunction(key, function)
+	}
 
-    public void addVariable(String key, Variable variable) {
-        processor.addVariable(key, variable);
-    }
+	companion object {
 
-    public void addFunction(NamedFunction function) {
-        processor.addFunction(function);
-    }
-
-    public void addFunction(String key, Function function) {
-        processor.addFunction(key, function);
-    }
-
+		val instance: AdvancedChatKonstruct = AdvancedChatKonstruct()
+	}
 }

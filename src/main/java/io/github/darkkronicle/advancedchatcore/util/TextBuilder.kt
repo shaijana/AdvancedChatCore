@@ -1,82 +1,80 @@
-package io.github.darkkronicle.advancedchatcore.util;
+package io.github.darkkronicle.advancedchatcore.util
 
-import net.minecraft.text.*;
+import net.minecraft.text.MutableText
+import net.minecraft.text.OrderedText
+import net.minecraft.text.Style
+import net.minecraft.text.Text
+import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+class TextBuilder {
 
-public class TextBuilder {
+	private val siblings: MutableList<RawText> = ArrayList()
 
-    private List<RawText> siblings = new ArrayList<>();
+	fun append(string: String): TextBuilder {
+		siblings.add(RawText.Companion.of(string))
+		return this
+	}
 
-    public TextBuilder append(String string) {
-        siblings.add(RawText.of(string));
-        return this;
-    }
+	fun append(string: String, style: Style?): TextBuilder {
+		siblings.add(RawText.Companion.of(string, style!!))
+		return this
+	}
 
-    public TextBuilder append(String string, Style style) {
-        siblings.add(RawText.of(string, style));
-        return this;
-    }
+	val texts: List<RawText>
+		get() = siblings
 
-    public List<RawText> getTexts() {
-        return siblings;
-    }
+	fun append(text: OrderedText): TextBuilder {
+		val last = AtomicReference<Style?>(null)
+		val builder = AtomicReference(StringBuilder())
+		text.accept { index: Int, style: Style, codePoint: Int ->
+			if (last.get() == null) {
+				last.set(style)
+				builder.get().append(Character.toChars(codePoint))
+				return@accept true
+			} else if (last.get() == style) {
+				builder.get().append(Character.toChars(codePoint))
+				return@accept true
+			}
+			append(builder.get().toString(), last.get())
+			last.set(style)
+			builder.set(StringBuilder().append(Character.toChars(codePoint)))
+			true
+		}
+		if (!builder.get().isEmpty()) {
+			append(builder.get().toString(), last.get())
+		}
+		return this
+	}
 
-    public TextBuilder append(OrderedText text) {
-        AtomicReference<Style> last = new AtomicReference<>(null);
-        AtomicReference<StringBuilder> builder = new AtomicReference<>(new StringBuilder());
-        text.accept((index, style, codePoint) -> {
-            if (last.get() == null) {
-                last.set(style);
-                builder.get().append(Character.toChars(codePoint));
-                return true;
-            } else if (last.get().equals(style)) {
-                builder.get().append(Character.toChars(codePoint));
-                return true;
-            }
-            append(builder.get().toString(), last.get());
-            last.set(style);
-            builder.set(new StringBuilder().append(Character.toChars(codePoint)));
-            return true;
-        });
-        if (!builder.get().isEmpty()) {
-            append(builder.get().toString(), last.get());
-        }
-        return this;
-    }
+	fun append(text: Text): TextBuilder {
+		val last = AtomicReference<Style?>(null)
+		val builder = AtomicReference(StringBuilder())
+		text.visit<Any?>({ style: Style, asString: String? ->
+			if (last.get() == null) {
+				last.set(style)
+				builder.get().append(asString)
+				return@visit Optional.empty<Any>()
+			} else if (last.get() == style) {
+				builder.get().append(asString)
+				return@visit Optional.empty<Any>()
+			}
+			append(builder.get().toString(), last.get())
+			last.set(style)
+			builder.set(StringBuilder(asString))
+			Optional.empty<Any?>()
+		}, Style.EMPTY)
+		if (!builder.get().isEmpty()) {
+			append(builder.get().toString(), last.get())
+		}
+		return this
+	}
 
-    public TextBuilder append(Text text) {
-        AtomicReference<Style> last = new AtomicReference<>(null);
-        AtomicReference<StringBuilder> builder = new AtomicReference<>(new StringBuilder());
-        text.visit((style, asString) -> {
-            if (last.get() == null) {
-                last.set(style);
-                builder.get().append(asString);
-                return Optional.empty();
-            } else if (last.get().equals(style)) {
-                builder.get().append(asString);
-                return Optional.empty();
-            }
-            append(builder.get().toString(), last.get());
-            last.set(style);
-            builder.set(new StringBuilder(asString));
-            return Optional.empty();
-        }, Style.EMPTY);
-        if (!builder.get().isEmpty()) {
-            append(builder.get().toString(), last.get());
-        }
-        return this;
-    }
-
-    public MutableText build() {
-        MutableText newText = Text.empty();
-        for (RawText sib : siblings) {
-            newText.append(Text.literal(sib.content()).fillStyle(sib.style()));
-        }
-        return newText;
-    }
-
+	fun build(): MutableText {
+		val newText = Text.empty()
+		for (sib in siblings) {
+			newText.append(Text.literal(sib.content).fillStyle(sib.style))
+		}
+		return newText
+	}
 }

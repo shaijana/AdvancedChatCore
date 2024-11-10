@@ -5,81 +5,77 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package io.github.darkkronicle.advancedchatcore.util;
+package io.github.darkkronicle.advancedchatcore.util
 
-import java.util.TreeSet;
-import lombok.AllArgsConstructor;
-import lombok.Value;
-import org.jetbrains.annotations.NotNull;
+import lombok.AllArgsConstructor
+import lombok.Value
+import java.util.*
 
 // Referenced
 // https://github.com/vacla/Watson/blob/fabric_1.16.2/src/main/java/eu/minemania/watson/scheduler/SyncTaskQueue.java
+/** A queue to handle delayed tasks in ticks.  */
+class SyncTaskQueue {
 
-/** A queue to handle delayed tasks in ticks. */
-public class SyncTaskQueue {
+	private var lastTick = 0
 
-    private static final SyncTaskQueue INSTANCE = new SyncTaskQueue();
+	/** A task that contains a time to trigger and a [Runnable] for when it should happen.  */
+	@Value
+	@AllArgsConstructor
+	class QueuedTask : Comparable<QueuedTask> {
 
-    public static SyncTaskQueue getInstance() {
-        return INSTANCE;
-    }
+		/**
+		 * Tick number when it should be triggered. This isn't delay, this is based off of the
+		 * current tick value in [net.minecraft.client.gui.hud.InGameHud]
+		 */
+		var tick: Int = 0
 
-    private int lastTick = 0;
+		/** [Runnable] to run when the task is called.  */
+		var task: Runnable? = null
 
-    /** A task that contains a time to trigger and a {@link Runnable} for when it should happen. */
-    @Value
-    @AllArgsConstructor
-    public static class QueuedTask implements Comparable<QueuedTask> {
+		override fun compareTo(@NotNull o: QueuedTask): Int {
+			// Compares when it should happen. Used to ensure that the first in the stack is what
+			// needs to
+			// happen.
+			return Integer.compare(tick, o.tick)
+		}
+	}
 
-        /**
-         * Tick number when it should be triggered. This isn't delay, this is based off of the
-         * current tick value in {@link net.minecraft.client.gui.hud.InGameHud}
-         */
-        int tick;
+	// Use TreeSet to automagically sort by when it needs to happen
+	private val queue = TreeSet<QueuedTask>()
 
-        /** {@link Runnable} to run when the task is called. */
-        Runnable task;
+	/**
+	 * Add's a new task to do after a certain amount of ticks
+	 *
+	 * @param after Delay in ticks
+	 * @param runnable What to run when it should be called
+	 */
+	fun add(after: Int, runnable: Runnable) {
+		queue.add(QueuedTask(lastTick + after, runnable))
+	}
 
-        @Override
-        public int compareTo(@NotNull SyncTaskQueue.QueuedTask o) {
-            // Compares when it should happen. Used to ensure that the first in the stack is what
-            // needs to
-            // happen.
-            return Integer.compare(tick, o.tick);
-        }
-    }
+	/**
+	 * Updates the queue with the tick. This shouldn't be called outside of the core.
+	 *
+	 * @param tick Current time in ticks.
+	 */
+	fun update(tick: Int) {
+		lastTick = tick
+		if (queue.size == 0) {
+			return
+		}
+		var task = queue.first()
+		while (task != null && task.tick <= lastTick) {
+			task.task!!.run()
+			queue.pollFirst()
+			if (queue.size == 0) {
+				break
+			}
+			task = queue.first()
+		}
+	}
 
-    // Use TreeSet to automagically sort by when it needs to happen
-    private final TreeSet<QueuedTask> queue = new TreeSet<>();
+	companion object {
 
-    /**
-     * Add's a new task to do after a certain amount of ticks
-     *
-     * @param after Delay in ticks
-     * @param runnable What to run when it should be called
-     */
-    public void add(int after, Runnable runnable) {
-        queue.add(new QueuedTask(lastTick + after, runnable));
-    }
-
-    /**
-     * Updates the queue with the tick. This shouldn't be called outside of the core.
-     *
-     * @param tick Current time in ticks.
-     */
-    public void update(int tick) {
-        lastTick = tick;
-        if (queue.size() == 0) {
-            return;
-        }
-        QueuedTask task = queue.first();
-        while (task != null && task.tick <= lastTick) {
-            task.task.run();
-            queue.pollFirst();
-            if (queue.size() == 0) {
-                break;
-            }
-            task = queue.first();
-        }
-    }
+		val instance: SyncTaskQueue = SyncTaskQueue()
+	}
 }
