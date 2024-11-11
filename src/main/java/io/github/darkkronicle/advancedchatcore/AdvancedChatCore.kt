@@ -32,16 +32,15 @@ class AdvancedChatCore : ClientModInitializer {
 
 	override fun onInitializeClient() {
 		// Important to get first since configuration options depend on colors
-		Colors.Companion.getInstance().load()
+		Colors.load()
 		InitializationHandler.getInstance().registerInitializationHandler(InitHandler())
 		val client: MinecraftClient = MinecraftClient.getInstance()
 		ClientTickEvents.START_CLIENT_TICK.register(
 			ClientTickEvents.StartTick { s: MinecraftClient ->
 				// Allow for delayed tasks to be added
-				SyncTaskQueue.Companion.getInstance().update(s.inGameHud.getTicks())
+				SyncTaskQueue.update(s.inGameHud.ticks)
 				// Make sure we're not in the sleeping screen while awake
-				if (client.currentScreen is AdvancedSleepingChatScreen
-					&& !client.player!!.isSleeping()) {
+				if (client.currentScreen is AdvancedSleepingChatScreen && client.player?.isSleeping == false) {
 					GuiBase.openGui(null)
 				}
 			})
@@ -62,7 +61,7 @@ class AdvancedChatCore : ClientModInitializer {
 		 */
 		var CREATE_SUGGESTOR: Boolean = true
 
-		val LOGGER: Logger = LogManager.getLogger(MOD_ID)
+		val logger: Logger = LogManager.getLogger(MOD_ID)
 
 		private val RANDOM: Random = Random()
 
@@ -86,13 +85,14 @@ class AdvancedChatCore : ClientModInitializer {
 		 */
 		@kotlin.Throws(URISyntaxException::class, IOException::class)
 		fun getResource(path: String?): InputStream? {
-			val uri: URI = Thread.currentThread().getContextClassLoader().getResource(path).toURI()
-			if (uri.getScheme() != "file") {
+			val uri = Thread.currentThread().contextClassLoader.getResource(path)?.toURI()
+				?: return null
+			return if (uri.scheme != "file") {
 				// it's not a file
-				return Thread.currentThread().getContextClassLoader().getResourceAsStream(path)
+				Thread.currentThread().getContextClassLoader().getResourceAsStream(path)
 			} else {
 				// it's a file - try to access it directly!
-				return FileInputStream(Paths.get(uri).toFile())
+				FileInputStream(Paths.get(uri).toFile())
 			}
 		}
 
@@ -103,25 +103,24 @@ class AdvancedChatCore : ClientModInitializer {
 			 * @return Random generated string.
 			 */
 			get() {
-				return RANDOM_STRINGS.get(
-					RANDOM.nextInt(
-						RANDOM_STRINGS.size))
+				return RANDOM_STRINGS[RANDOM.nextInt(
+					RANDOM_STRINGS.size)]
 			}
 
-		val server: String
+		val serverAddress: String?
 			/**
 			 * Returns the server address that the client is currently connected to.
 			 * @return The server address if connected, 'singleplayer' if singleplayer, 'none' if none.
 			 */
 			get() {
 				val client: MinecraftClient = MinecraftClient.getInstance()
-				if (client.isInSingleplayer()) {
+				if (client.isInSingleplayer) {
 					return "singleplayer"
 				}
-				if (client.getCurrentServerEntry() == null) {
+				if (client.currentServerEntry == null) {
 					return "none"
 				}
-				return client.getCurrentServerEntry()!!.address
+				return client.currentServerEntry?.address
 			}
 	}
 }

@@ -49,13 +49,13 @@ class InitHandler : IInitializationHandler {
 
 	override fun registerModHandlers() {
 		// Setup modules
-		ModuleHandler.Companion.getInstance().registerModules()
+		ModuleHandler.registerModules()
 		ConfigManager.getInstance()
 			.registerConfigHandler(AdvancedChatCore.Companion.MOD_ID, ConfigStorage())
 		// Setup chat history
-		MessageDispatcher.Companion.getInstance().register(ChatHistoryProcessor(), -1)
+		MessageDispatcher.register(ChatHistoryProcessor(), -1)
 
-		GuiConfigHandler.Companion.getInstance().addTab(
+		GuiConfigHandler.addTab(
 			GuiConfigHandler.Companion.children(
 				"advancedchatcore",
 				"advancedchat.tab.advancedchatcore",
@@ -73,12 +73,12 @@ class InitHandler : IInitializationHandler {
 				))
 		)
 
-		ProfanityUtil.Companion.getInstance().loadConfigs()
-		MessageDispatcher.Companion.getInstance().registerPreFilter(IMessageFilter { text: Text ->
+		ProfanityUtil.loadConfigs()
+		MessageDispatcher.registerPreFilter(IMessageFilter { text: Text ->
 			var text: Text = text
 			if (ConfigStorage.General.FILTER_PROFANITY.config.getBooleanValue()) {
 				val profanity: List<StringMatch?> =
-					ProfanityUtil.Companion.getInstance().getBadWords(text.getString(), ConfigStorage.General.PROFANITY_ABOVE.config.getDoubleValue().toFloat(),
+					ProfanityUtil.getBadWords(text.getString(), ConfigStorage.General.PROFANITY_ABOVE.config.getDoubleValue().toFloat(),
 						ConfigStorage.General.PROFANITY_ON_WORD_BOUNDARIES.config.getBooleanValue())
 				if (profanity.size == 0) {
 					return@registerPreFilter Optional.empty<Text>()

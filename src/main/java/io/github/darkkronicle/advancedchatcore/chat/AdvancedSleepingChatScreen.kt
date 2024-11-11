@@ -25,7 +25,7 @@ class AdvancedSleepingChatScreen : AdvancedChatScreen("") {
 				20,
 				StringUtils.translate("multiplayer.stopSleeping"))
 		this.addButton(stopSleep
-		) { button: ButtonBase?, mouseButton: Int -> stopSleeping() }
+		) { _: ButtonBase?, _: Int -> stopSleeping() }
 	}
 
 	fun onClose() {
@@ -33,19 +33,23 @@ class AdvancedSleepingChatScreen : AdvancedChatScreen("") {
 	}
 
 	override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-		if (keyCode == KeyCodes.KEY_ESCAPE) {
-			this.stopSleeping()
-		} else if (keyCode == KeyCodes.KEY_ENTER || keyCode == KeyCodes.KEY_KP_ENTER) {
-			val string: String = chatField!!.text.trim { it <= ' ' }
-			if (!string.isEmpty()) {
-				MessageSender.Companion.getInstance().sendMessage(string)
+		when (keyCode) {
+			KeyCodes.KEY_ESCAPE -> {
+				this.stopSleeping()
 			}
+			KeyCodes.KEY_ENTER,
+			KeyCodes.KEY_KP_ENTER -> {
+				val string: String = chatField.text.trim { it <= ' ' }
+				if (string.isNotEmpty()) {
+					MessageSender.sendMessage(string)
+				}
 
-			chatField!!.text = ""
-			client!!.inGameHud.chatHud.resetScroll()
-			// Prevents really weird interactions with chat history
-			resetCurrentMessage()
-			return true
+				chatField.text = ""
+				client!!.inGameHud.chatHud.resetScroll()
+				// Prevents really weird interactions with chat history
+				resetCurrentMessage()
+				return true
+			}
 		}
 
 		return super.keyPressed(keyCode, scanCode, modifiers)
@@ -53,9 +57,7 @@ class AdvancedSleepingChatScreen : AdvancedChatScreen("") {
 
 	private fun stopSleeping() {
 		val clientPlayNetworkHandler = client!!.player!!.networkHandler
-		clientPlayNetworkHandler.sendPacket(
-			ClientCommandC2SPacket(
-				client!!.player, ClientCommandC2SPacket.Mode.STOP_SLEEPING))
+		clientPlayNetworkHandler.sendPacket(ClientCommandC2SPacket(client!!.player, ClientCommandC2SPacket.Mode.STOP_SLEEPING))
 		openGui(null)
 	}
 }

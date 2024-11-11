@@ -31,7 +31,7 @@ import java.util.*
  * Different events and hooks can be registered in here.
  */
 @Environment(EnvType.CLIENT)
-class MessageDispatcher private constructor() {
+object MessageDispatcher {
 
 	private val processors = ArrayList<IMessageProcessor>()
 	private val preFilters = ArrayList<IMessageFilter>()
@@ -143,7 +143,7 @@ class MessageDispatcher private constructor() {
 	 * @param processor IMessageFilter to modify text
 	 * @param index Index to add it. Supplying a negative value will put it at the end.
 	 */
-	fun registerPreFilter(processor: IMessageFilter, index: Int) {
+	fun registerPreFilter(processor: (Text) -> Optional<Text>, index: Int) {
 		var index = index
 		if (index < 0) {
 			index = preFilters.size
@@ -166,13 +166,9 @@ class MessageDispatcher private constructor() {
 		if (index < 0) {
 			index = processors.size
 		}
+
 		if (!processors.contains(processor)) {
-			processors.add(index, processor)
+			processors[index] = processor
 		}
-	}
-
-	companion object {
-
-		val instance: MessageDispatcher = MessageDispatcher()
 	}
 }

@@ -17,21 +17,19 @@ import lombok.ToString
  *
  * This class is comparable based on where it starts.
  */
-@EqualsAndHashCode
-@ToString
-@AllArgsConstructor
-class StringMatch : Comparable<StringMatch> {
-
+class StringMatch(
 	/** The content that was matched  */
-	var match: String? = null
+	var match: String,
 
 	/** The index of the start of the match  */
-	var start: Int? = null
+	var start: Int,
 
 	/** The index of the end of the match  */
-	var end: Int? = null
+	var end: Int,
+
+) : Comparable<StringMatch> {
 
 	override fun compareTo(o: StringMatch): Int {
-		return start!!.compareTo(o.start!!)
+		return start.compareTo(o.start)
 	}
 }

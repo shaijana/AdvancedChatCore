@@ -29,7 +29,7 @@ class RegexFinder : PatternFinder() {
 		try {
 			return Pattern.compile(toMatch)
 		} catch (e: PatternSyntaxException) {
-			AdvancedChatCore.Companion.LOGGER.error("The regex " + toMatch + " is invalid!")
+			AdvancedChatCore.Companion.logger.error("The regex " + toMatch + " is invalid!")
 			return null
 		}
 	}

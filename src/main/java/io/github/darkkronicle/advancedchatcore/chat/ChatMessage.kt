@@ -30,7 +30,7 @@ class ChatMessage @Builder protected constructor(
 	protected var displayText: Text,
 	originalText: Text?,
 	/** ID of the message.  */
-	protected var id: Int,
+	var id: Int,
 	/** The time the message was created.  */
 	protected var time: LocalTime,
 	/** The background color of the message.  */
@@ -46,7 +46,7 @@ class ChatMessage @Builder protected constructor(
 	protected var originalText: Text = originalText ?: displayText
 
 	/** The amount of times the message has been stacked.  */
-	protected var stacks: Int = 0
+	var stacks: Int = 0
 
 	/** Unique ID of the message.  */
 	protected var uuid: UUID = UUID.randomUUID()
@@ -74,19 +74,9 @@ class ChatMessage @Builder protected constructor(
 	 * @return Cloned object
 	 */
 	fun shallowClone(width: Int): ChatMessage {
-		val message =
-			ChatMessage(
-				creationTick,
-				displayText,
-				originalText,
-				id,
-				time,
-				backgroundColor,
-				width,
-				owner,
-				signature,
-				indicator)
-		message.setStacks(getStacks())
+		val message = ChatMessage(creationTick, displayText, originalText, id, time, backgroundColor, width, owner, signature, indicator).also {
+			it.stacks = stacks
+		}
 		return message
 	}
 

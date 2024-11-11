@@ -15,20 +15,8 @@ import java.util.function.Function
  * A class to handle the construction and distribution of [AdvancedChatScreenSection] when
  * [AdvancedChatScreen] is created.
  */
-class ChatScreenSectionHolder private constructor() {
+object ChatScreenSectionHolder {
 
 	/** All suppliers for the sections  */
-	@Getter
-	private val sectionSuppliers: MutableList<Function<AdvancedChatScreen, AdvancedChatScreenSection?>> = ArrayList()
-
-	fun addSectionSupplier(
-		sectionSupplier: Function<AdvancedChatScreen, AdvancedChatScreenSection?>
-	) {
-		sectionSuppliers.add(sectionSupplier)
-	}
-
-	companion object {
-
-		val instance: ChatScreenSectionHolder = ChatScreenSectionHolder()
-	}
+	val sectionSuppliers = mutableListOf<Function<AdvancedChatScreen, AdvancedChatScreenSection>>()
 }

@@ -18,9 +18,7 @@ import java.util.*
 class WidgetIntBox(x: Int, y: Int, width: Int, height: Int, textRenderer: TextRenderer?) :
 	GuiTextFieldGeneric(x, y, width, height, textRenderer) {
 
-	@Setter
-	@Getter
-	private val apply: Runnable? = null
+	val apply: Runnable? = null
 
 	init {
 		this.setTextPredicate { text: String ->

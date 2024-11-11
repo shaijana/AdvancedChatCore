@@ -22,14 +22,14 @@ class WidgetColor(x: Int, y: Int, width: Int, height: Int, private var currentCo
 	private val colorX = x + width - 20
 
 	init {
-		text = String.format("#%08X", currentColor.color())
+		text = String.format("#%08X", currentColor.color)
 	}
 
 	override fun renderWidget(context: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
 		val y = this.y
 		RenderUtils.drawRect(this.colorX, y, 19, 19, -0x1)
 		RenderUtils.drawRect(this.colorX + 1, y + 1, 17, 17, -0x1000000)
-		RenderUtils.drawRect(this.colorX + 2, y + 2, 15, 15, currentColor.color())
+		RenderUtils.drawRect(this.colorX + 2, y + 2, 15, 15, currentColor.color)
 	}
 
 	override fun write(text: String) {
@@ -41,10 +41,10 @@ class WidgetColor(x: Int, y: Int, width: Int, height: Int, private var currentCo
 		return super.getWidth() + 22
 	}
 
-	val andRefreshColor4f: Color
+	private val andRefreshColor4f: Color
 		get() {
 			val color: Optional<Color> =
-				Colors.Companion.getInstance().getColor(text)
+				Colors.getColor(text)
 			if (color.isPresent) {
 				this.currentColor = color.get()
 				return this.currentColor

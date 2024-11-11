@@ -31,7 +31,7 @@ import java.util.function.Supplier
  * @author PimDeWitte
  */
 @Environment(EnvType.CLIENT)
-class ProfanityUtil private constructor() {
+object ProfanityUtil {
 
 	@Getter
 	private val words: MutableMap<Float, MutableList<String>> = HashMap()
@@ -70,16 +70,16 @@ class ProfanityUtil private constructor() {
 					}
 					words[severity]!!.add(word)
 				} catch (e: Exception) {
-					AdvancedChatCore.Companion.LOGGER.log(
+					AdvancedChatCore.Companion.logger.log(
 						Level.ERROR, "Error while initializing profanity words", e)
 				}
 			}
-			AdvancedChatCore.Companion.LOGGER.log(
+			AdvancedChatCore.Companion.logger.log(
 				Level.INFO, "Loaded $counter words to profanity filter.")
 		} catch (e: URISyntaxException) {
-			AdvancedChatCore.Companion.LOGGER.log(Level.ERROR, "Error loading swear_words.csv", e)
+			AdvancedChatCore.Companion.logger.log(Level.ERROR, "Error loading swear_words.csv", e)
 		} catch (e: IOException) {
-			AdvancedChatCore.Companion.LOGGER.log(Level.ERROR, "Error loading swear_words.csv", e)
+			AdvancedChatCore.Companion.logger.log(Level.ERROR, "Error loading swear_words.csv", e)
 		}
 	}
 
@@ -145,10 +145,5 @@ class ProfanityUtil private constructor() {
 			}
 		}
 		return list
-	}
-
-	companion object {
-
-		val instance: ProfanityUtil = ProfanityUtil()
 	}
 }

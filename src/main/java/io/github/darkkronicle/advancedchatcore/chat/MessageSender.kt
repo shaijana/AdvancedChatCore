@@ -11,53 +11,44 @@ import io.github.darkkronicle.advancedchatcore.AdvancedChatCore
 import io.github.darkkronicle.advancedchatcore.interfaces.IStringFilter
 import net.minecraft.client.MinecraftClient
 import org.apache.logging.log4j.Level
-import java.util.*
 
-class MessageSender private constructor() {
+object MessageSender {
 
 	private val client: MinecraftClient = MinecraftClient.getInstance()
 
-	private val filters: MutableList<IStringFilter> = ArrayList()
-
-	fun addFilter(filter: IStringFilter) {
-		filters.add(filter)
-	}
+	val filters = mutableListOf<IStringFilter>()
 
 	fun addFilter(filter: IStringFilter, index: Int) {
-		filters.add(index, filter)
+		filters[index] = filter
 	}
 
-	fun sendMessage(string: String) {
-		var string = string
-		val unfiltered = string
-		for (filter in filters) {
-			val filtered = filter.filter(string)
-			if (filtered!!.isPresent) {
-				string = filtered.get().trim()
+	fun sendMessage(originMessageString: String) {
+		var messageString = originMessageString
+		val unfilteredMessageString = messageString
+		filters.forEach { filter ->
+			val filtered = filter.filter(messageString)
+				?: return@forEach
+			if (filtered.isPresent) {
+				messageString = filtered.get().trim()
 			}
 		}
-		if (string.length > 256) {
-			string = string.substring(0, 256)
+		if (messageString.length > 256) {
+			messageString = messageString.substring(0, 256)
 		}
-		client.inGameHud.chatHud.addToMessageHistory(unfiltered)
+		client.inGameHud.chatHud.addToMessageHistory(unfilteredMessageString)
 
-		if (string.length == 0) {
-			AdvancedChatCore.Companion.LOGGER.log(Level.WARN,
-				"Blank message was attempted to be sent. $unfiltered")
+		if (messageString.isEmpty()) {
+			AdvancedChatCore.Companion.logger.log(Level.WARN,
+				"Blank message was attempted to be sent. $unfilteredMessageString")
 			return
 		}
 
 		if (client.player != null) {
-			if (string.startsWith("/")) {
-				client.networkHandler!!.sendChatCommand(string.substring(1))
+			if (messageString.startsWith("/")) {
+				client.networkHandler!!.sendChatCommand(messageString.substring(1))
 			} else {
-				client.networkHandler!!.sendChatMessage(string)
+				client.networkHandler!!.sendChatMessage(messageString)
 			}
 		}
-	}
-
-	companion object {
-
-		val instance: MessageSender = MessageSender()
 	}
 }

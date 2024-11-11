@@ -26,11 +26,11 @@ import java.time.format.DateTimeFormatter
 @Environment(EnvType.CLIENT)
 class ChatHistoryProcessor : IMessageProcessor {
 
-	override fun process(text: Text, @Nullable unfiltered: Text?): Boolean {
+	override fun process(text: Text, unfiltered: Text?): Boolean {
 		return process(text, unfiltered, null, MessageIndicator.system())
 	}
 
-	override fun process(text: Text, @Nullable unfiltered: Text?, @Nullable signature: MessageSignatureData?, @Nullable indicator: MessageIndicator?): Boolean {
+	override fun process(text: Text, unfiltered: Text?, signature: MessageSignatureData?, indicator: MessageIndicator?): Boolean {
 		var unfiltered = unfiltered
 		if (unfiltered == null) {
 			unfiltered = text
@@ -49,7 +49,7 @@ class ChatHistoryProcessor : IMessageProcessor {
 				ConfigStorage.General.TIME_TEXT_FORMAT.config.stringValue.replace("&".toRegex(), "§")
 			val color = ConfigStorage.General.TIME_COLOR.config.get()
 			var style = Style.EMPTY
-			val textColor = TextColor.fromRgb(color!!.color())
+			val textColor = TextColor.fromRgb(color.color)
 			style = style.withColor(textColor)
 			text.siblings.add(0, Text.literal(replaceFormat.replace("%TIME%".toRegex(), time.format(format))).fillStyle(style))
 		}
@@ -69,7 +69,7 @@ class ChatHistoryProcessor : IMessageProcessor {
 			.time(time)
 			.backgroundColor(null)
 			.build()
-		if (ChatHistory.Companion.getInstance().add(line)) {
+		if (ChatHistory.add(line)) {
 			sendToHud(line.getDisplayText(), line.getSignature(), line.getIndicator())
 		}
 		return true
@@ -77,13 +77,13 @@ class ChatHistoryProcessor : IMessageProcessor {
 
 	companion object {
 
-		private fun sendToHud(text: Text, @Nullable signature: MessageSignatureData, indicator: MessageIndicator): Boolean {
-			if (AdvancedChatCore.Companion.FORWARD_TO_HUD) {
-				val chatHudLine = ChatHudLine(MinecraftClient.getInstance().inGameHud.ticks, text, signature, indicator)
-				(MinecraftClient.getInstance().inGameHud.chatHud as MixinChatHudInvoker).invokeAddVisibleMessage(chatHudLine)
-				return true
+		private fun sendToHud(text: Text, signature: MessageSignatureData, indicator: MessageIndicator): Boolean {
+			if (!AdvancedChatCore.FORWARD_TO_HUD) {
+				return false
 			}
-			return false
+			val chatHudLine = ChatHudLine(MinecraftClient.getInstance().inGameHud.ticks, text, signature, indicator)
+			(MinecraftClient.getInstance().inGameHud.chatHud as MixinChatHudInvoker).invokeAddVisibleMessage(chatHudLine)
+			return true
 		}
 	}
 }

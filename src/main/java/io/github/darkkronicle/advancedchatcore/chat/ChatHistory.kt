@@ -17,24 +17,19 @@ import java.util.stream.Collectors
 
 /** A utility class to maintain the storage of the chat.  */
 @Environment(EnvType.CLIENT)
-class ChatHistory private constructor() {
+object ChatHistory {
 
 	/** Stored lines  */
-	@Getter
-	private val messages: MutableList<ChatMessage> = ArrayList()
+	private val messages = mutableListOf<ChatMessage>()
 
 	/** Maximum lines for storage  */
-	@Getter
-	@Setter
-	private val maxLines = 500
+	const val maxLines = 500
 
 	/** Runnable's to run when chat history is cleared  */
-	@Getter
-	private val onClear: MutableList<Runnable> = ArrayList()
+	private val onClear = mutableListOf<Runnable>()
 
 	/** [IChatMessageProcessor] for when history is updated.  */
-	@Getter
-	private val onUpdate: MutableList<IChatMessageProcessor> = ArrayList()
+	private val onUpdate = mutableListOf<IChatMessageProcessor>()
 
 	/**
 	 * Add's a runnable that will trigger when all chat messages should be cleared.
@@ -42,7 +37,7 @@ class ChatHistory private constructor() {
 	 * @param runnable Runnable to run
 	 */
 	fun addOnClear(runnable: Runnable) {
-		onClear.add(runnable)
+		onClear += runnable
 	}
 
 	/**
@@ -52,14 +47,14 @@ class ChatHistory private constructor() {
 	 * @param processor Processor ot add
 	 */
 	fun addOnUpdate(processor: IChatMessageProcessor) {
-		onUpdate.add(processor)
+		onUpdate += processor
 	}
 
 	/** Goes through and clears all message data from everywhere.  */
 	fun clearAll() {
 		messages.clear()
-		for (r in onClear) {
-			r.run()
+		onClear.forEach { runnable ->
+			runnable.run()
 		}
 	}
 
@@ -69,7 +64,7 @@ class ChatHistory private constructor() {
 	}
 
 	private fun sendUpdate(message: ChatMessage, type: IChatMessageProcessor.UpdateType) {
-		for (consumer in onUpdate) {
+		onUpdate.forEach { consumer ->
 			consumer.onMessageUpdate(message, type)
 		}
 	}
@@ -82,13 +77,12 @@ class ChatHistory private constructor() {
 	fun add(message: ChatMessage): Boolean {
 		sendUpdate(message, IChatMessageProcessor.UpdateType.NEW)
 		var i = 0
-		while (i < ConfigStorage.General.CHAT_STACK.config.integerValue
-			&& i < messages.size
+		while (i < ConfigStorage.General.CHAT_STACK.config.integerValue && i < messages.size
 		) {
 			// Check for stacks
 			val chatLine = messages[i]
 			if (message.isSimilar(chatLine)) {
-				chatLine.setStacks(chatLine.getStacks() + 1)
+				chatLine.stacks = (chatLine.stacks + 1)
 				sendUpdate(chatLine, IChatMessageProcessor.UpdateType.STACK)
 				return false
 			}
@@ -110,18 +104,12 @@ class ChatHistory private constructor() {
 	 * @param messageId Message ID to find and remove
 	 */
 	fun removeMessage(messageId: Int) {
-		val toRemove =
-			messages.stream()
-				.filter { line: ChatMessage -> line.getId() == messageId }
-				.collect(Collectors.toList())
-		messages.removeAll(toRemove)
-		for (m in toRemove) {
-			sendUpdate(m, IChatMessageProcessor.UpdateType.REMOVE)
+		val toRemove = messages.filter { message ->
+			message.id == messageId
 		}
-	}
-
-	companion object {
-
-		val instance: ChatHistory = ChatHistory()
+		messages.removeAll(toRemove)
+		toRemove.forEach { message ->
+			sendUpdate(message, IChatMessageProcessor.UpdateType.REMOVE)
+		}
 	}
 }

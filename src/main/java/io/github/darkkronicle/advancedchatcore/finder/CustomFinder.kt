@@ -27,7 +27,7 @@ class CustomFinder private constructor() :
 		val option: Optional<IFinder> = getFinder(toMatch)
 		if (option.isEmpty()) {
 			// Invalid :(
-			AdvancedChatCore.Companion.LOGGER.log(Level.WARN, getHelp(toMatch))
+			AdvancedChatCore.Companion.logger.log(Level.WARN, getHelp(toMatch))
 			return false
 		}
 		return option.get().isMatch(input, toMatch)
@@ -49,7 +49,7 @@ class CustomFinder private constructor() :
 		val option: Optional<IFinder> = getFinder(toMatch)
 		if (option.isEmpty()) {
 			// Invalid :(
-			AdvancedChatCore.Companion.LOGGER.log(Level.WARN, getHelp(toMatch))
+			AdvancedChatCore.Companion.logger.log(Level.WARN, getHelp(toMatch))
 			return ArrayList()
 		}
 		return option.get().getMatches(input, toMatch)

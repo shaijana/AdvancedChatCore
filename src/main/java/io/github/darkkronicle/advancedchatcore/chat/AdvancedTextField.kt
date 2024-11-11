@@ -39,7 +39,7 @@ open class AdvancedTextField(
 	y: Int,
 	width: Int,
 	height: Int,
-	@Nullable copyFrom: TextFieldWidget?,
+	copyFrom: TextFieldWidget?,
 	text: Text?
 ) : TextFieldWidget(textRenderer, x, y, width, height, copyFrom, text) {
 
@@ -49,9 +49,9 @@ open class AdvancedTextField(
 	private var lastSaved = ""
 
 	/** Snapshots of chat box  */
-	private val history: MutableList<String> = ArrayList()
+	private val history = mutableListOf<String>()
 	private var focusedTicks = 0
-	private var renderLines: List<Text> = ArrayList()
+	private var renderLines = mutableListOf<Text>()
 	private val textRenderer: TextRenderer
 	private var suggestion: String? = null
 	private var maxLength = 32
@@ -60,7 +60,7 @@ open class AdvancedTextField(
 
 	// TODO Split?
 	private var renderTextProvider =
-		BiFunction { string: String?, firstCharacterIndex: Int? -> OrderedText.styledForwardsVisitedString(string, Style.EMPTY) }
+		BiFunction { string: String, _: Int -> OrderedText.styledForwardsVisitedString(string, Style.EMPTY) }
 
 	private var historyIndex = -1
 
@@ -124,7 +124,7 @@ open class AdvancedTextField(
 		updateRender()
 	}
 
-	override fun setSuggestion(@Nullable suggestion: String?) {
+	override fun setSuggestion(suggestion: String?) {
 		this.suggestion = suggestion
 	}
 
@@ -150,17 +150,21 @@ open class AdvancedTextField(
 		var ended = false
 		val selStart: Int
 		val selEnd: Int
-		if (this.selectionStart < this.selectionEnd) {
-			selStart = this.selectionStart
-			selEnd = this.selectionEnd
-		} else {
-			selStart = this.selectionEnd
-			selEnd = this.selectionStart
+		when {
+			this.selectionStart < this.selectionEnd -> {
+				selStart = this.selectionStart
+				selEnd = this.selectionEnd
+			}
+			else -> {
+				selStart = this.selectionEnd
+				selEnd = this.selectionStart
+			}
 		}
 		val x = x
 		val y = y
-		context.fill(getX() - 2, renderY - 2, getX() + width + 4, getY() + height + 4, ConfigStorage.ChatScreen.COLOR.config.get().color())
-		for (line in renderLines.indices) {
+		context.fill(getX() - 2, renderY - 2, getX() + width + 4, getY() + height + 4, ConfigStorage.ChatScreen.COLOR.config.get().color)
+
+		renderLines.indices.forEach { line ->
 			val text = renderLines[line]
 			if (cursor >= charCount && cursor < text.string.length + charCount) {
 				cursorX = textRenderer.getWidth(text.string.substring(0, cursor - charCount))
@@ -170,10 +174,10 @@ open class AdvancedTextField(
 			if (selection) {
 				if (!started && selStart >= charCount && selStart <= text.string.length + charCount) {
 					started = true
-					val startX: Int = textRenderer.getWidth(TextUtil.Companion.truncate(text, StringMatch("", 0, selStart - charCount)))
+					val startX: Int = textRenderer.getWidth(TextUtil.truncate(text, StringMatch("", 0, selStart - charCount)))
 					if (selEnd > charCount && selEnd <= text.string.length + charCount) {
 						ended = true
-						val sEndX: Int = textRenderer.getWidth(TextUtil.Companion.truncate(text, StringMatch("", 0, selEnd - charCount)))
+						val sEndX: Int = textRenderer.getWidth(TextUtil.truncate(text, StringMatch("", 0, selEnd - charCount)))
 						drawSelectionHighlight(x + startX, renderY - 1, x + sEndX, renderY + textRenderer.fontHeight)
 					} else {
 						val sEndX = textRenderer.getWidth(text)
@@ -182,7 +186,7 @@ open class AdvancedTextField(
 				} else if (started && !ended) {
 					if (selEnd >= charCount && selEnd <= text.string.length + charCount) {
 						ended = true
-						val sEndX: Int = textRenderer.getWidth(TextUtil.Companion.truncate(text, StringMatch("", 0, selEnd - charCount)))
+						val sEndX: Int = textRenderer.getWidth(TextUtil.truncate(text, StringMatch("", 0, selEnd - charCount)))
 						drawSelectionHighlight(x, renderY - 1, x + sEndX, renderY + textRenderer.fontHeight)
 					} else {
 						val sEndX = textRenderer.getWidth(text)

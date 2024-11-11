@@ -16,17 +16,16 @@ import net.minecraft.client.network.PlayerListEntry
 import net.minecraft.util.Identifier
 
 /** Stores data about a message owner  */
-@Data
-@Value
-@AllArgsConstructor
 @Environment(EnvType.CLIENT)
-class MessageOwner {
-
+data class MessageOwner(
 	/** Player name  */
-	var name: String? = null
+	var name: String,
 
 	/** Entry that has player data  */
-	var entry: PlayerListEntry? = null
+	var entry: PlayerListEntry,
+) {
+
+
 
 	val texture: Identifier
 		/**
@@ -34,5 +33,5 @@ class MessageOwner {
 		 *
 		 * @return Identifier with texture data
 		 */
-		get() = entry!!.skinTextures.texture()
+		get() = entry.skinTextures.texture()
 }

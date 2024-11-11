@@ -8,47 +8,45 @@
 package io.github.darkkronicle.advancedchatcore
 
 import fi.dy.masa.malilib.interfaces.IInitializationHandler
-import lombok.AllArgsConstructor
-import lombok.Getter
-import lombok.Value
 import net.fabricmc.loader.api.FabricLoader
 import net.fabricmc.loader.api.ModContainer
 import net.fabricmc.loader.api.metadata.CustomValue
 import java.util.*
 
-class ModuleHandler private constructor() {
+object ModuleHandler {
 
-	@Getter
-	private val modules: MutableList<Module> = ArrayList()
+	val modules = mutableListOf<Module>()
 
-	private var toLoad: MutableList<LoadOrder>? = ArrayList()
+	private var toLoad = mutableListOf<LoadOrder>()
 
 	fun registerModules() {
 		modules.clear()
-		for (mod: ModContainer in FabricLoader.getInstance().getAllMods()) {
+		FabricLoader.getInstance().allMods.forEach { mod: ModContainer ->
 			// Check if in "custom" it has "acmodule": true
-			val acData: CustomValue? = mod.getMetadata().getCustomValue("acmodule")
-			if (acData == null) {
-				continue
-			}
-			if (acData.getType() == CustomValue.CvType.BOOLEAN && acData.getAsBoolean()) {
+			val acData: CustomValue = mod.metadata.getCustomValue("acmodule")
+				?: return@forEach
+			if (acData.type == CustomValue.CvType.BOOLEAN && acData.asBoolean) {
 				// Add the module
-				modules.add(Module(mod.getMetadata().getId(), mod.getMetadata().getAuthors()))
+				val module = Module().apply {
+					modId = mod.metadata.id
+					authors = mod.metadata.authors
+				}
+				modules += module
 			}
 		}
 	}
 
 	fun registerInitHandler(name: String, priority: Int, handler: IInitializationHandler) {
-		toLoad!!.add(LoadOrder(name, priority, handler))
+		toLoad += LoadOrder(name, priority, handler)
 	}
 
 	/** Do not call  */
 	fun load() {
-		Collections.sort(toLoad)
-		for (load: LoadOrder in toLoad!!) {
-			load.getHandler().registerModHandlers()
+		toLoad.sort()
+		toLoad.forEach { load: LoadOrder ->
+			load.handler.registerModHandlers()
 		}
-		toLoad = null
+		toLoad.clear()
 	}
 
 	/**
@@ -61,33 +59,26 @@ class ModuleHandler private constructor() {
 	 * @return An optional containing the module if found.
 	 */
 	fun fromId(modID: String): Optional<Module> {
-		for (m: Module in modules) {
-			if (m.getModId() == modID) {
-				return Optional.of(m)
+		modules.forEach { module: Module ->
+			if (module.modId == modID) {
+				return Optional.of(module)
 			}
 		}
 		return Optional.empty()
 	}
 
-	@AllArgsConstructor
-	@Value
-	class LoadOrder : Comparable<LoadOrder> {
+	class LoadOrder(
+		var name: String,
+		var order: Int,
+		var handler: IInitializationHandler,
+	) : Comparable<LoadOrder> {
 
-		var name: String? = null
-		var order: Int? = null
-		var handler: IInitializationHandler? = null
-
-		override fun compareTo(o: LoadOrder): Int {
-			val compared: Int = order!!.compareTo(o.order!!)
+		override fun compareTo(other: LoadOrder): Int {
+			val compared: Int = order.compareTo(other.order)
 			if (compared == 0) {
-				return name!!.compareTo(o.getName())
+				return name.compareTo(other.name)
 			}
 			return compared
 		}
-	}
-
-	companion object {
-
-		val instance: ModuleHandler = ModuleHandler()
 	}
 }

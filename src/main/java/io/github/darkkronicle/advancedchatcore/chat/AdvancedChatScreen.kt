@@ -26,8 +26,8 @@ import net.minecraft.text.MutableText
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.MathHelper
-import java.util.*
-import java.util.function.Consumer
+import net.minecraft.util.math.MathHelper.clamp
+import kotlin.math.max
 
 open class AdvancedChatScreen() : GuiBase() {
 
@@ -37,24 +37,21 @@ open class AdvancedChatScreen() : GuiBase() {
 	private var passEvents = false
 
 	/** Chat field at the bottom of the screen  */
-	@Getter
-	var chatField: AdvancedTextField? = null
+	lateinit var chatField: AdvancedTextField
 
 	/** What the chat box started out with  */
-	@Getter
-	private var originalChatText = ""
+	var originalChatText = ""
 
-	private val sections: MutableList<AdvancedChatScreenSection> = ArrayList()
+	private val sections = mutableListOf<AdvancedChatScreenSection>()
 
-	@Getter
-	private val rightSideButtons = RowList<ButtonBase>()
+	val rightSideButtons = RowList<ButtonBase>()
 
 	@Getter
 	private val leftSideButtons = RowList<ButtonBase>()
 
 	override fun closeGui(showParent: Boolean) {
 		if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.booleanValue) {
-			last = chatField!!.text
+			last = chatField.text
 		}
 		super.closeGui(showParent)
 	}
@@ -76,11 +73,9 @@ open class AdvancedChatScreen() : GuiBase() {
 	}
 
 	private fun setupSections() {
-		for (supplier in ChatScreenSectionHolder.Companion.getInstance().getSectionSuppliers()) {
+		ChatScreenSectionHolder.sectionSuppliers.forEach { supplier ->
 			val section: AdvancedChatScreenSection = supplier.apply(this)
-			if (section != null) {
-				sections.add(section)
-			}
+			sections.add(section)
 		}
 	}
 
@@ -103,15 +98,15 @@ open class AdvancedChatScreen() : GuiBase() {
 		rightSideButtons.clear()
 		leftSideButtons.clear()
 		resetCurrentMessage()
-		this.chatField =
+		chatField =
 			object : AdvancedTextField(
-				this.textRenderer,
+				textRenderer,
 				4,
-				this.height - 12,
-				this.width - 10,
+				height - 12,
+				width - 10,
 				12,
 				Text.translatable("chat.editBox")) {
-				override fun getNarrationMessage(): MutableText {
+				override fun getNarrationMessage(): MutableText? {
 					return null
 				}
 			}
@@ -121,26 +116,25 @@ open class AdvancedChatScreen() : GuiBase() {
 			chatField.setMaxLength(256)
 		}
 		chatField.setDrawsBackground(false)
-		if (this.originalChatText != "") {
+		if (this.originalChatText.isNotEmpty()) {
 			chatField.setText(this.originalChatText)
-		} else if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.booleanValue
-			&& last != "") {
+		} else if (ConfigStorage.ChatScreen.PERSISTENT_TEXT.config.booleanValue && last.isNotEmpty()) {
 			chatField.setText(last)
 		}
-		chatField.setChangedListener(Consumer { chatText: String -> this.onChatFieldUpdate(chatText) })
+		chatField.setChangedListener { chatText: String -> this.onChatFieldUpdate(chatText) }
 
 		// Add settings button
 		rightSideButtons.add("settings", IconButton(0, 0, 14, 64, Identifier.of(AdvancedChatCore.Companion.MOD_ID, "textures/gui/settings.png")
 		) { button: IconButton? ->
 			openGui(
-				GuiConfigHandler.Companion.getInstance().getDefaultScreen())
+				GuiConfigHandler.defaultScreen)
 		})
 
-		this.addSelectableChild(this.chatField)
+		this.addSelectableChild(chatField)
 
-		this.setInitialFocus(this.chatField)
+		this.setInitialFocus(chatField)
 
-		for (section in sections) {
+		sections.forEach { section ->
 			section.initGui()
 		}
 
@@ -148,9 +142,10 @@ open class AdvancedChatScreen() : GuiBase() {
 		var y = client!!.window.scaledHeight - 30
 		for (i in 0 until rightSideButtons.rowSize()) {
 			val buttonList: List<ButtonBase> = rightSideButtons.get(i)
+				?: continue
 			var maxHeight = 0
 			var x = originalX
-			for (button in buttonList) {
+			buttonList.forEach { button ->
 				maxHeight = max(maxHeight, button.height)
 				x -= button.width + 1
 				button.setPosition(x, y)
@@ -162,9 +157,10 @@ open class AdvancedChatScreen() : GuiBase() {
 		y = client!!.window.scaledHeight - 30
 		for (i in 0 until leftSideButtons.rowSize()) {
 			val buttonList: List<ButtonBase> = leftSideButtons.get(i)
+				?: continue
 			var maxHeight = 0
 			var x = originalX
-			for (button in buttonList) {
+			buttonList.forEach { button ->
 				maxHeight = max(maxHeight, button.height)
 				button.setPosition(x, y)
 				addButton(button, null)
@@ -178,27 +174,27 @@ open class AdvancedChatScreen() : GuiBase() {
 	}
 
 	override fun resize(client: MinecraftClient, width: Int, height: Int) {
-		val string = chatField!!.text
+		val string = chatField.text
 		this.init(client, width, height)
 		this.setText(string)
-		for (section in sections) {
+		sections.forEach { section ->
 			section.resize(width, height)
 		}
 	}
 
 	override fun removed() {
-		for (section in sections) {
+		sections.forEach { section ->
 			section.removed()
 		}
 	}
 
 	override fun tick() {
-		chatField!!.tick()
+		chatField.tick()
 	}
 
 	private fun onChatFieldUpdate(chatText: String) {
-		val string = chatField!!.text
-		for (section in sections) {
+		val string = chatField.text
+		sections.forEach { section ->
 			section.onChatFieldUpdate(chatText, string)
 		}
 	}
@@ -213,7 +209,7 @@ open class AdvancedChatScreen() : GuiBase() {
 
 	override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
 		if (!passEvents) {
-			for (section in sections) {
+			sections.forEach { section ->
 				if (section.keyPressed(keyCode, scanCode, modifiers)) {
 					return true
 				}
@@ -222,47 +218,51 @@ open class AdvancedChatScreen() : GuiBase() {
 				return true
 			}
 		}
-		if (keyCode == KeyCodes.KEY_ESCAPE) {
-			// Exit out
-			openGui(null)
-			return true
-		}
-		if (keyCode == KeyCodes.KEY_ENTER || keyCode == KeyCodes.KEY_KP_ENTER) {
-			val string: String = chatField!!.text.trim { it <= ' ' }
-			// Strip message and send
-			MessageSender.Companion.getInstance().sendMessage(string)
-			chatField!!.text = ""
-			last = ""
-			// Exit
-			openGui(null)
-			return true
-		}
-		if (keyCode == KeyCodes.KEY_UP) {
-			// Go through previous history
-			this.setChatFromHistory(-1)
-			return true
-		}
-		if (keyCode == KeyCodes.KEY_DOWN) {
-			// Go through previous history
-			this.setChatFromHistory(1)
-			return true
-		}
-		if (keyCode == KeyCodes.KEY_PAGE_UP) {
-			// Scroll
-			client!!.inGameHud
-				.chatHud
-				.scroll(client!!.inGameHud.chatHud.visibleLineCount - 1)
-			return true
-		}
-		if (keyCode == KeyCodes.KEY_PAGE_DOWN) {
-			// Scroll
-			client!!.inGameHud
-				.chatHud
-				.scroll(-client!!.inGameHud.chatHud.visibleLineCount + 1)
-			return true
+
+		when(keyCode) {
+			KeyCodes.KEY_ESCAPE -> {
+				// Exit out
+				openGui(null)
+				return true
+			}
+			KeyCodes.KEY_ENTER,
+			KeyCodes.KEY_KP_ENTER -> {
+				val string: String = chatField.text.trim { it <= ' ' }
+				// Strip message and send
+				MessageSender.sendMessage(string)
+				chatField.text = ""
+				last = ""
+				// Exit
+				openGui(null)
+				return true
+			}
+			KeyCodes.KEY_UP -> {
+				// Go through previous history
+				this.setChatFromHistory(-1)
+				return true
+			}
+			KeyCodes.KEY_DOWN -> {
+				// Go through previous history
+				this.setChatFromHistory(1)
+				return true
+			}
+			KeyCodes.KEY_PAGE_UP -> {
+				// Scroll
+				client!!.inGameHud
+					.chatHud
+					.scroll(client!!.inGameHud.chatHud.visibleLineCount - 1)
+				return true
+			}
+			KeyCodes.KEY_PAGE_DOWN -> {
+				// Scroll
+				client!!.inGameHud
+					.chatHud
+					.scroll(-client!!.inGameHud.chatHud.visibleLineCount + 1)
+				return true
+			}
 		}
 		if (passEvents) {
-			chatField!!.text = ""
+			chatField.text = ""
 			val key = InputUtil.fromKeyCode(keyCode, scanCode)
 			KeyBinding.setKeyPressed(key, true)
 			KeyBinding.onKeyPressed(key)
@@ -272,31 +272,31 @@ open class AdvancedChatScreen() : GuiBase() {
 	}
 
 	override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
-		var verticalAmount = verticalAmount
-		if (verticalAmount > 1.0) {
-			verticalAmount = 1.0
+		var changedVerticalAmount = verticalAmount
+		if (changedVerticalAmount > 1.0) {
+			changedVerticalAmount = 1.0
 		}
 
-		if (verticalAmount < -1.0) {
-			verticalAmount = -1.0
+		if (changedVerticalAmount < -1.0) {
+			changedVerticalAmount = -1.0
 		}
 
-		for (section in sections) {
-			if (section.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) {
+		sections.forEach { section ->
+			if (section.mouseScrolled(mouseX, mouseY, horizontalAmount, changedVerticalAmount)) {
 				return true
 			}
 		}
 		if (!hasShiftDown()) {
-			verticalAmount *= 7.0
+			changedVerticalAmount *= 7.0
 		}
 
 		// Send to hud to scroll
-		client!!.inGameHud.chatHud.scroll(verticalAmount.toInt())
+		client!!.inGameHud.chatHud.scroll(changedVerticalAmount.toInt())
 		return true
 	}
 
 	override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-		for (section in sections) {
+		sections.forEach { section ->
 			if (section.mouseClicked(mouseX, mouseY, button)) {
 				return true
 			}
@@ -311,12 +311,11 @@ open class AdvancedChatScreen() : GuiBase() {
 				return true
 			}
 		}
-		return (chatField!!.mouseClicked(mouseX, mouseY, button)
-				|| super.mouseClicked(mouseX, mouseY, button))
+		return (chatField.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button))
 	}
 
 	override fun mouseReleased(mouseX: Double, mouseY: Double, mouseButton: Int): Boolean {
-		for (section in sections) {
+		sections.forEach { section ->
 			if (section.mouseReleased(mouseX, mouseY, mouseButton)) {
 				return true
 			}
@@ -324,10 +323,8 @@ open class AdvancedChatScreen() : GuiBase() {
 		return super.mouseReleased(mouseX, mouseY, mouseButton)
 	}
 
-	override fun mouseDragged(
-		mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double
-	): Boolean {
-		for (section in sections) {
+	override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
+		sections.forEach { section ->
 			if (section.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
 				return true
 			}
@@ -337,28 +334,28 @@ open class AdvancedChatScreen() : GuiBase() {
 
 	override fun insertText(text: String, override: Boolean) {
 		if (override) {
-			chatField!!.text = text
+			chatField.text = text
 		} else {
-			chatField!!.write(text)
+			chatField.write(text)
 		}
 	}
 
-	fun setChatFromHistory(i: Int) {
+	private fun setChatFromHistory(i: Int) {
 		var targetIndex = this.messageHistorySize + i
 		val maxIndex = client!!.inGameHud.chatHud.messageHistory.size
-		targetIndex = MathHelper.clamp(targetIndex, 0, maxIndex)
+		targetIndex = clamp(targetIndex, 0, maxIndex)
 		if (targetIndex != this.messageHistorySize) {
 			if (targetIndex == maxIndex) {
 				this.messageHistorySize = maxIndex
-				chatField!!.text = this.finalHistory
+				chatField.text = this.finalHistory
 			} else {
 				if (this.messageHistorySize == maxIndex) {
-					this.finalHistory = chatField!!.text
+					this.finalHistory = chatField.text
 				}
 
 				val hist = client!!.inGameHud.chatHud.messageHistory[targetIndex]
-				chatField!!.text = hist
-				for (section in sections) {
+				chatField.text = hist
+				sections.forEach { section ->
 					section.setChatFromHistory(hist)
 				}
 				this.messageHistorySize = targetIndex
@@ -369,22 +366,21 @@ open class AdvancedChatScreen() : GuiBase() {
 	override fun render(context: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
 		val hud = client!!.inGameHud.chatHud
 		this.focused = this.chatField
-		chatField!!.isFocused = true
-		chatField!!.render(context, mouseX, mouseY, partialTicks)
+		chatField.isFocused = true
+		chatField.render(context, mouseX, mouseY, partialTicks)
 		renderWithoutBackground(context, mouseX, mouseY, partialTicks)
-		for (section in sections) {
+		sections.forEach { section ->
 			section.render(context, mouseX, mouseY, partialTicks)
 		}
 		val style = hud.getTextStyleAt(mouseX.toDouble(), mouseY.toDouble())
 		if (style != null && style.hoverEvent != null) {
 			context.drawHoverEvent(textRenderer, style, mouseX, mouseY)
-			//this.renderTextHoverEffect(context, style, mouseX, mouseY);
 		}
 	}
 
 	//Copied from GuiBase, but removed background rendering.
 	private fun renderWithoutBackground(drawContext: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
-		if (this.drawContext == null || this.drawContext == drawContext == false) {
+		if (this.drawContext == null || this.drawContext != drawContext) {
 			this.drawContext = drawContext
 		}
 
@@ -406,7 +402,7 @@ open class AdvancedChatScreen() : GuiBase() {
 	}
 
 	private fun setText(text: String) {
-		chatField!!.text = text
+		chatField.text = text
 	}
 
 	companion object {

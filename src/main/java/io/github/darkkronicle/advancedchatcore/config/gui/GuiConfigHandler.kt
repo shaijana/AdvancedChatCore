@@ -24,7 +24,7 @@ import java.util.function.Function
 import java.util.function.Supplier
 
 @Environment(EnvType.CLIENT)
-class GuiConfigHandler private constructor() {
+object GuiConfigHandler {
 
 	@Deprecated("")
 	var activeTab: String? = ""

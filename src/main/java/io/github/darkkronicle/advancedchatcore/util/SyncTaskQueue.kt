@@ -14,7 +14,7 @@ import java.util.*
 // Referenced
 // https://github.com/vacla/Watson/blob/fabric_1.16.2/src/main/java/eu/minemania/watson/scheduler/SyncTaskQueue.java
 /** A queue to handle delayed tasks in ticks.  */
-class SyncTaskQueue {
+object SyncTaskQueue {
 
 	private var lastTick = 0
 
@@ -72,10 +72,5 @@ class SyncTaskQueue {
 			}
 			task = queue.first()
 		}
-	}
-
-	companion object {
-
-		val instance: SyncTaskQueue = SyncTaskQueue()
 	}
 }

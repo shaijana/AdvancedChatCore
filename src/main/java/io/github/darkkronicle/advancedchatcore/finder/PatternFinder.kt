@@ -15,7 +15,6 @@ import java.util.regex.Pattern
 
 abstract class PatternFinder : IFinder {
 
-	@Nullable
 	abstract fun getPattern(toMatch: String): Pattern?
 
 	override fun isMatch(input: String, toMatch: String): Boolean {

@@ -20,7 +20,7 @@ import net.minecraft.client.util.math.MatrixStack
  */
 abstract class AdvancedChatScreenSection(
 	/** The [AdvancedChatScreen] that is linked to this section  */
-	@field:Getter private val screen: AdvancedChatScreen?
+	val screen: AdvancedChatScreen?
 ) : Drawable {
 
 	/** Triggers when the gui is initiated  */

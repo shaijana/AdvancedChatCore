@@ -2,7 +2,7 @@ plugins {
 	id 'fabric-loom' version '1.8-SNAPSHOT'
 	id 'maven-publish'
 	id "io.freefair.lombok" version "8.4"
-	id 'org.jetbrains.kotlin.jvm'
+	id "org.jetbrains.kotlin.jvm" version "1.9.24"
 }
 
 version = "${project.minecraft_version}-${project.mod_version}"
@@ -33,6 +33,7 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	modImplementation "fi.dy.masa.malilib:malilib-fabric-${project.minecraft_version}:${project.malilib_version}"
+	modImplementation "net.fabricmc:fabric-language-kotlin:${project.kotlin_version}"
 	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
 	implementation "com.github.DarkKronicle.Konstruct:addons:${project.konstruct_version}"

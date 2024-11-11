@@ -35,7 +35,7 @@ class TomlUtil {
 			// Layer on top
 			tomlParser.parse(AdvancedChatCore.Companion.getResource(defaultName), config, ParsingMode.ADD)
 		} catch (e: Exception) {
-			AdvancedChatCore.Companion.LOGGER.log(
+			AdvancedChatCore.Companion.logger.log(
 				Level.ERROR, "Could not load default settings into $defaultName", e)
 		}
 		return config

@@ -19,7 +19,7 @@ import java.util.*
 
 /** A class storing data of colors as defined in colors.toml  */
 @Environment(EnvType.CLIENT)
-class Colors private constructor() {
+object Colors {
 
 	@Getter
 	private val colors: MutableMap<String, Color> = HashMap()
@@ -49,7 +49,7 @@ class Colors private constructor() {
 				org.apache.commons.io.FileUtils.copyInputStreamToFile(AdvancedChatCore.Companion.getResource("colors.toml"), file)
 			} catch (e: Exception) {
 				// Rip
-				AdvancedChatCore.Companion.LOGGER.log(Level.ERROR, "Colors could not be loaded correctly!", e)
+				AdvancedChatCore.Companion.logger.log(Level.ERROR, "Colors could not be loaded correctly!", e)
 				return
 			}
 		}
@@ -98,7 +98,7 @@ class Colors private constructor() {
 			if (palettes.containsKey(defaultPalette)) {
 				return palettes[defaultPalette]
 			}
-			AdvancedChatCore.Companion.LOGGER.log(
+			AdvancedChatCore.Companion.logger.log(
 				Level.WARN, "Default Palette $defaultPalette does not exist!")
 			return palettes.values.toTypedArray<Palette>().get(0)
 		}
@@ -137,7 +137,7 @@ class Colors private constructor() {
 			var string = string
 			if (string.length != 7 && string.length != 9) {
 				// Not #ffffff (so invalid!)
-				AdvancedChatCore.Companion.LOGGER.log(
+				AdvancedChatCore.Companion.logger.log(
 					Level.WARN,
 					"Color $string isn't formatted correctly! (#ffffff) (#ffffffff)")
 				return Color(255, 255, 255, 255)
@@ -153,7 +153,7 @@ class Colors private constructor() {
 				}
 				return Color(red, green, blue, alpha)
 			} catch (e: Exception) {
-				AdvancedChatCore.Companion.LOGGER.log(
+				AdvancedChatCore.Companion.logger.log(
 					Level.WARN, "Couldn't convert $string into a color!", e)
 			}
 			return Color(255, 255, 255, 255)

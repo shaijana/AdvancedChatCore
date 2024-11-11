@@ -18,45 +18,44 @@ import net.minecraft.client.gui.screen.ChatInputSuggestor
 @Environment(EnvType.CLIENT)
 class DefaultChatSuggestor(screen: AdvancedChatScreen?) : AdvancedChatScreenSection(screen) {
 
-	private var commandSuggestor: ChatInputSuggestor? = null
+	private lateinit var commandSuggestor: ChatInputSuggestor
 
 	override fun onChatFieldUpdate(chatText: String?, text: String) {
-		commandSuggestor!!.setWindowActive(text != screen.originalChatText)
-		commandSuggestor!!.refresh()
+		commandSuggestor.setWindowActive(text != screen?.originalChatText)
+		commandSuggestor.refresh()
 	}
 
 	override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-		return commandSuggestor!!.keyPressed(keyCode, scanCode, modifiers)
+		return commandSuggestor.keyPressed(keyCode, scanCode, modifiers)
 	}
 
 	override fun render(context: DrawContext, mouseX: Int, mouseY: Int, partialTicks: Float) {
-		commandSuggestor!!.render(context, mouseX, mouseY)
+		commandSuggestor.render(context, mouseX, mouseY)
 	}
 
 	override fun setChatFromHistory(hist: String?) {
-		commandSuggestor!!.setWindowActive(false)
+		commandSuggestor.setWindowActive(false)
 	}
 
 	override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
-		return commandSuggestor!!.mouseScrolled(verticalAmount)
+		return commandSuggestor.mouseScrolled(verticalAmount)
 	}
 
 	override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-		return commandSuggestor!!.mouseClicked(mouseX, mouseY, button)
+		return commandSuggestor.mouseClicked(mouseX, mouseY, button)
 	}
 
 	override fun resize(width: Int, height: Int) {
-		commandSuggestor!!.refresh()
+		commandSuggestor.refresh()
 	}
 
 	override fun initGui() {
 		val client = MinecraftClient.getInstance()
 		val screen = screen
-		this.commandSuggestor =
-			ChatInputSuggestor(
+		this.commandSuggestor = ChatInputSuggestor(
 				client,
 				screen,
-				screen.chatField,
+				screen?.chatField,
 				client.textRenderer,
 				false,
 				false,
@@ -64,6 +63,6 @@ class DefaultChatSuggestor(screen: AdvancedChatScreen?) : AdvancedChatScreenSect
 				10,
 				true,
 				-805306368)
-		commandSuggestor!!.refresh()
+		commandSuggestor.refresh()
 	}
 }

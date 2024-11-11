@@ -20,8 +20,8 @@ class WidgetLabelHoverable : WidgetLabel {
 
 	constructor(x: Int, y: Int, width: Int, height: Int, textColor: Int, vararg text: String?) : super(x, y, width, height, textColor, *text)
 
-	fun setHoverLines(vararg hoverLines: String?) {
-		this.hoverLines = Arrays.asList(*hoverLines)
+	fun setHoverLines(hoverLines: String?) {
+		this.hoverLines = listOf(hoverLines)
 	}
 
 	override fun postRenderHovered(
